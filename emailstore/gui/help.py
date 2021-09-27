@@ -32,8 +32,8 @@ def help_notes(master):
     help_widget(master, help.NOTES, help)
 
 
-if __name__=='__main__':
-    #Display all help documents without running Emailstore application
+if __name__ == "__main__":
+    # Display all help documents without running Emailstore application
 
     root = tkinter.Tk()
     help_about(root)

@@ -21,5 +21,5 @@ expresses the idea in Python code.
 Currently the Opera version of mailbox directories is the only style supported.
 
 """
-APPLICATION_NAME = 'EmailStore'
-ERROR_LOG = 'ErrorLog'
+APPLICATION_NAME = "EmailStore"
+ERROR_LOG = "ErrorLog"
