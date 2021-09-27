@@ -1,0 +1,93 @@
+====================================
+Select and store emails from mailbox
+====================================
+
+.. contents::
+
+
+Description
+===========
+
+This package provides a select and store email interface given mailboxes populated by an email client.
+
+Specify selection rules for emails by sender and date.
+
+Extract emails from a set of mailboxes.
+
+Allow specific emails to be excluded from the selection.
+
+
+Installation Instructions
+=========================
+
+Usually this package will be installed by installing `ChessResults`_.
+
+Install the package by typing
+
+   python setup.py install
+
+at the command prompt with setup.py in the current directory.
+
+You may need to give the path and version of Python depending on your system's configuration:
+
+   <path to python>/python<version> setup.py install
+
+   For example
+
+      C:\\Python33\\python setup.py install
+
+         on Microsoft Windows or
+
+      python3.3 setup.py install
+
+         on Unix-like systems.
+
+Use `Python`_ 3.3 or later.
+
+
+Run
+===
+
+The command to run this package is:
+
+   python -m emailstore.emailstore
+
+You may need to give the path and version of Python depending on your system's configuration:
+
+   <path to python>/python<version> -m emailstore.emailstore
+
+   For example
+
+      C:\\Python33\\python -m emailstore.emailstore
+
+         on Microsoft Windows or
+
+      python3.3 -m emailstore.emailstore
+
+         on Unix-like systems.
+
+Or use the facilities of your desktop (Microsoft Windows, GNOME, KDE, ...) to set up a convenient way of starting chessgames. 
+
+
+Restrictions
+============
+
+The supported mailbox formats are:
+
+* mbox
+* `Opera`_'s directory structure for emails
+
+At most one email per sender per second, looking at the date sent, is allowed.
+
+
+Notes
+=====
+
+The current implementation does just enough to support the `ChessResults`_ package.
+
+The configuration file editor interface is almost unusable.
+
+
+.. _`Python`: https://python.org
+.. _`Opera`: http://opera.com
+.. _`ChessResults`: http://solentware.co.uk/grading.html
