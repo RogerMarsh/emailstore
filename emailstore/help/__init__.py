@@ -8,7 +8,7 @@ import os
 
 ABOUT = "About"
 GUIDE = "Guide"
-NOTES = "Notes"
+NOTES = "Email Selection"
 
 _textfile = {
     ABOUT: ("about",),
