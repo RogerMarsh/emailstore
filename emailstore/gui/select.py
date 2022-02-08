@@ -33,7 +33,9 @@ class Select(ExceptionHandler):
 
     """Define and use an email select and store configuration file."""
 
-    def __init__(self, use_toplevel=False, **kargs):
+    def __init__(
+        self, use_toplevel=False, application_name=APPLICATION_NAME, **kargs
+    ):
         """Create the database and GUI objects.
 
         **kargs - passed to tkinter Toplevel widget if use_toplevel True
@@ -44,7 +46,7 @@ class Select(ExceptionHandler):
         else:
             self.root = tkinter.Tk()
         try:
-            self.root.wm_title(APPLICATION_NAME)
+            self.root.wm_title(application_name)
             self.root.wm_minsize(
                 width=startup_minimum_width, height=startup_minimum_height
             )
