@@ -19,7 +19,13 @@ from solentware_misc.gui.configuredialog import ConfigureDialog
 
 from . import help
 from .. import APPLICATION_NAME
-from ..core.emailcollector import EmailCollector, EXCLUDE_EMAIL, COLLECTED_CONF
+from ..core.emailcollector import (
+    EmailCollector,
+    EXCLUDE_EMAIL,
+    COLLECTED_CONF,
+    _MBOX_MAIL_STORE,
+    _MAILBOX_STYLE,
+)
 
 startup_minimum_width = 340
 startup_minimum_height = 400
@@ -193,6 +199,43 @@ class Select(ExceptionHandler):
                 (self.emailtextctrl, "<ButtonPress-3>", self.text_popup),
             ):
                 widget.bind(sequence, self.try_event(function))
+            mbox_popup_menu = tkinter.Menu(
+                master=self.configctrl, tearoff=False
+            )
+            mbox_popup_menu.add_separator()
+            mbox_popup_menu.add_command(
+                label="Replace and #comment current",
+                command=self.replace_and_comment_current,
+                accelerator="Alt F5",
+            )
+            mbox_popup_menu.add_command(
+                label="Replace",
+                command=self.replace_current,
+                accelerator="Alt F3",
+            )
+            mbox_popup_menu.add_command(
+                label="Insert after current",
+                command=self.insert_after_current,
+                accelerator="Alt F7",
+            )
+            mbox_popup_menu.add_command(
+                label="Insert before current",
+                command=self.insert_before_current,
+                accelerator="Alt F9",
+            )
+            mbox_popup_menu.add_separator()
+            self.mbox_popup_menu = mbox_popup_menu
+            mboxstyle_popup_menu = tkinter.Menu(
+                master=self.configctrl, tearoff=False
+            )
+            mboxstyle_popup_menu.add_separator()
+            mboxstyle_popup_menu.add_command(
+                label="Insert after mailboxstyle",
+                command=self.insert_after_current,
+                accelerator="Alt F7",
+            )
+            mboxstyle_popup_menu.add_separator()
+            self.mboxstyle_popup_menu = mboxstyle_popup_menu
             self._folder = folder
             self._most_recent_action = None
 
@@ -247,13 +290,7 @@ class Select(ExceptionHandler):
                 ("# ", os.path.basename(config_file), " email selection rules")
             ),
         )
-        fn = open(config_file, "w")
-        try:
-            fn.write(
-                self.configctrl.get("1.0", " ".join((tkinter.END, "-1 chars")))
-            )
-        finally:
-            fn.close()
+        self._save_configuration(set_edited_flag=False)
         self._configuration = config_file
         self._folder = os.path.dirname(config_file)
         self.root.wm_title(" - ".join((self.application_name, config_file)))
@@ -355,13 +392,7 @@ class Select(ExceptionHandler):
                 ),
             )
             return
-        fn = open(config_file, "w")
-        try:
-            fn.write(
-                self.configctrl.get("1.0", " ".join((tkinter.END, "-1 chars")))
-            )
-        finally:
-            fn.close()
+        self._save_configuration(set_edited_flag=False)
 
     def configure_email_selection(self):
         """Set parameters that control email selection from mailboxes."""
@@ -585,46 +616,166 @@ class Select(ExceptionHandler):
         start = wconf.index(" ".join((index, "linestart")))
         end = wconf.index(" ".join((index, "lineend", "+1 char")))
         text = wconf.get(start, end)
-        if not text.startswith("".join((EXCLUDE_EMAIL, " "))):
+        keyvalue = text.split(" ", maxsplit=1)
+        if len(keyvalue) == 1:
             tkinter.messagebox.showinfo(
                 parent=self.get_toplevel(),
-                title="Cancel Exclude Email",
-                message="".join(
-                    (
-                        "The text under the pointer does not refer to an ",
-                        "email excluded from the selection.",
-                    )
-                ),
+                title="Edit Email Selection",
+                message="Popup menu not supported for 'key only' lines",
             )
             return
-        if (
-            tkinter.messagebox.askquestion(
-                parent=self.get_toplevel(),
-                title="Cancel Exclude Email",
-                message="".join(
-                    (
-                        "Confirm request to cancel exclusion of \n\n",
-                        text.split(" ", 1)[-1],
-                        "\n\nemail.\n\nThe file is not copied to the output ",
-                        'directory in this action; use "Apply" later to do ',
-                        "this.",
-                    )
-                ),
-            )
-            != tkinter.messagebox.YES
+        if keyvalue[0] not in (
+            EXCLUDE_EMAIL,
+            _MBOX_MAIL_STORE,
+            _MAILBOX_STYLE,
         ):
+            tkinter.messagebox.showinfo(
+                parent=self.get_toplevel(),
+                title="Edit Email Selection",
+                message="".join(
+                    (
+                        "Popup menu not supported for '",
+                        keyvalue[0],
+                        "' lines",
+                    )
+                ),
+            )
             return
-        wconf.delete(start, end)
-        if self._email_collector is not None:
-            self._email_collector.include_email(text.split(" ", 1)[-1].strip())
-        self._configuration_edited = True
-        fn = open(self._configuration, "w")
-        try:
-            fn.write(wconf.get("1.0", " ".join((tkinter.END, "-1 chars"))))
-            self._configuration_edited = False
-        finally:
-            fn.close()
+        if keyvalue[0] == EXCLUDE_EMAIL:
+            if (
+                tkinter.messagebox.askquestion(
+                    parent=self.get_toplevel(),
+                    title="Cancel Exclude Email",
+                    message="".join(
+                        (
+                            "Confirm request to cancel exclusion of \n\n",
+                            text.split(" ", 1)[-1],
+                            "\n\nemail.\n\nThe file is not copied to the ",
+                            "output directory in this action; use ",
+                            '"Apply" later to do this.',
+                        )
+                    ),
+                )
+                != tkinter.messagebox.YES
+            ):
+                return
+            wconf.delete(start, end)
+            if self._email_collector is not None:
+                self._email_collector.include_email(
+                    text.split(" ", 1)[-1].strip()
+                )
+            self._save_configuration()
+            return
+        if keyvalue[0] == _MBOX_MAIL_STORE:
+            mboxpath = os.path.expanduser(keyvalue[1])
+            while mboxpath not in ("/", ""):
+                if os.path.isdir(mboxpath):
+                    break
+                mboxpath = os.path.dirname(mboxpath)
+            if mboxpath in ("/", ""):
+                tkinter.messagebox.showinfo(
+                    parent=self.get_toplevel(),
+                    title="Add or Amend 'mailstore'",
+                    message="".join(
+                        (
+                            "Directory '",
+                            os.path.dirname(keyvalue[1]),
+                            "' not found. Defaulting to user's  ",
+                            "home directory.",
+                        )
+                    ),
+                )
+                mboxpath = os.path.expanduser("~")
+            self.__mboxpath = mboxpath
+            self.__start = start
+            self.__end = end
+            self.mbox_popup_menu.tk_popup(*event.widget.winfo_pointerxy())
+            return
+        if keyvalue[0] == _MAILBOX_STYLE:
+            self.__mboxpath = os.path.expanduser("~")
+            self.__end = end
+            self.mboxstyle_popup_menu.tk_popup(*event.widget.winfo_pointerxy())
+            return
+        tkinter.messagebox.showinfo(
+            parent=self.get_toplevel(),
+            title=" ".join((keyvalue[0], " not Supported")),
+            message="".join(
+                (
+                    "Add or amend '",
+                    keyvalue[0],
+                    "' not yet implemented.  Edit manually",
+                )
+            ),
+        )
         return
+
+    def replace_and_comment_current(self, event=None):
+        """ """
+        mbox_filepath = self.get_new_mbox_filepath(
+            "Replace and Comment Current"
+        )
+        if not mbox_filepath:
+            return
+        self.configctrl.insert(self.__start, "#")
+        self.configctrl.insert(
+            self.__end + "-1 char",
+            "".join(("\n", mbox_filepath)),
+        )
+        self._save_configuration()
+        return
+
+    def replace_current(self, event=None):
+        """ """
+        mbox_filepath = self.get_new_mbox_filepath("Replace Current")
+        if not mbox_filepath:
+            return
+        self.configctrl.delete(self.__start, self.__end + "-1 char")
+        self.configctrl.insert(self.__start, mbox_filepath)
+        self._save_configuration()
+        return
+
+    def insert_after_current(self, event=None):
+        """ """
+        mbox_filepath = self.get_new_mbox_filepath("Insert after Current")
+        if not mbox_filepath:
+            return
+        self.configctrl.insert(
+            self.__end + "-1 char",
+            "".join(("\n", mbox_filepath)),
+        )
+        self._save_configuration()
+        return
+
+    def insert_before_current(self, event=None):
+        """ """
+        mbox_filepath = self.get_new_mbox_filepath("Insert before Current")
+        if not mbox_filepath:
+            return
+        self.configctrl.insert(
+            self.__start,
+            "".join((mbox_filepath, "\n")),
+        )
+        self._save_configuration()
+        return
+
+    def get_new_mbox_filepath(self, title=""):
+        """ """
+        filepath = tkinter.filedialog.askopenfilename(
+            parent=self.get_toplevel(),
+            title=title,
+            initialdir=self.__mboxpath,
+        )
+        del self.__mboxpath
+        if not filepath:
+            tkinter.messagebox.showinfo(
+                parent=self.get_toplevel(),
+                title=title,
+                message="Action not done: no filename selected",
+            )
+        home = os.path.expanduser("~")
+        if filepath.startswith("".join((home, "/"))):
+            filepath = filepath.replace(home, "~")
+        return " ".join((_MBOX_MAIL_STORE, filepath))
 
     def list_popup(self, event=None):
         """ """
@@ -745,16 +896,29 @@ class Select(ExceptionHandler):
                 )
                 wconf.tag_bind(ftag, "<ButtonPress-1>", self._file_exists)
                 self._email_collector.exclude_email(filename)
-                self._configuration_edited = True
-                fn = open(self._configuration, "w")
-                try:
-                    fn.write(
-                        wconf.get("1.0", " ".join((tkinter.END, "-1 chars")))
-                    )
-                    self._configuration_edited = False
-                finally:
-                    fn.close()
+                self._save_configuration()
                 return
+
+    def _save_configuration(self, set_edited_flag=True):
+        """ """
+        if set_edited_flag:
+            self._configuration_edited = True
+        fn = open(self._configuration, "w")
+        try:
+            fn.write(
+                self.configctrl.get("1.0", " ".join((tkinter.END, "-1 chars")))
+            )
+            if set_edited_flag:
+                self._configuration_edited = False
+        finally:
+            fn.close()
+        self._clear_email_tags()
+        self.emailtextctrl.delete("1.0", tkinter.END)
+        self.emaillistctrl.delete("1.0", tkinter.END)
+        self.statusbar.set_status_text()
+        self._email_collector = None
+        if self._most_recent_action:
+            self._most_recent_action()
 
     def _file_exists(self, event=None):
         """ """
