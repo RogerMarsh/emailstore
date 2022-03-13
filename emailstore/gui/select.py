@@ -27,8 +27,8 @@ from ..core.emailcollector import (
     _MAILBOX_STYLE,
 )
 
-startup_minimum_width = 340
-startup_minimum_height = 400
+STARTUP_MINIMUM_WIDTH = 340
+STARTUP_MINIMUM_HEIGHT = 400
 
 
 class SelectError(Exception):
@@ -61,7 +61,7 @@ class Select(ExceptionHandler):
             else:
                 self.root.wm_title(application_name)
             self.root.wm_minsize(
-                width=startup_minimum_width, height=startup_minimum_height
+                width=STARTUP_MINIMUM_WIDTH, height=STARTUP_MINIMUM_HEIGHT
             )
             self.application_name = application_name
 
@@ -314,12 +314,12 @@ class Select(ExceptionHandler):
         )
         if not config_file:
             return
-        fn = open(config_file, "r")
+        ocf = open(config_file, "r")
         try:
             self.configctrl.delete("1.0", tkinter.END)
-            self.configctrl.insert(tkinter.END, fn.read())
+            self.configctrl.insert(tkinter.END, ocf.read())
         finally:
-            fn.close()
+            ocf.close()
         self._configuration = config_file
         self._folder = os.path.dirname(config_file)
         self.root.wm_title(" - ".join((self.application_name, config_file)))
@@ -417,9 +417,9 @@ class Select(ExceptionHandler):
         self._configuration_edited = True
         self.configctrl.delete("1.0", tkinter.END)
         self.configctrl.insert(tkinter.END, config_text)
-        fn = open(self._configuration, "w")
+        ocf = open(self._configuration, "w")
         try:
-            fn.write(config_text)
+            ocf.write(config_text)
             self._clear_email_tags()
             self.emailtextctrl.delete("1.0", tkinter.END)
             self.emaillistctrl.delete("1.0", tkinter.END)
@@ -427,7 +427,7 @@ class Select(ExceptionHandler):
             self._configuration_edited = False
             self._email_collector = None
         finally:
-            fn.close()
+            ocf.close()
         if self._most_recent_action:
             self._most_recent_action()
 
@@ -483,54 +483,54 @@ class Select(ExceptionHandler):
     def _show_selection(self):
         """Do the email selection but do not copy the emails."""
         self._clear_email_tags()
-        tw = self.emailtextctrl
-        lw = self.emaillistctrl
-        cc = self.configctrl
+        emailtextctrl = self.emailtextctrl
+        emaillistctrl = self.emaillistctrl
+        configctrl = self.configctrl
         tags = self._tag_names
-        tw.delete("1.0", tkinter.END)
-        lw.delete("1.0", tkinter.END)
+        emailtextctrl.delete("1.0", tkinter.END)
+        emaillistctrl.delete("1.0", tkinter.END)
 
         # Tag the text put in the widgets such that the source entry in
         # selected_emails_text can be recovered from the pointer position
         # over the widget.
         try:
-            for e, m in enumerate(self._email_collector.selected_emails_text):
-                textname = "x".join(("T", str(e)))
+            for email_num, email_item in enumerate(self._email_collector.selected_emails_text):
+                textname = "x".join(("T", str(email_num)))
                 tags.add(textname)
-                entryname = "x".join(("M", str(e)))
+                entryname = "x".join(("M", str(email_num)))
                 tags.add(entryname)
-                fromname = "x".join(("F", str(e)))
+                fromname = "x".join(("F", str(email_num)))
                 tags.add(fromname)
-                start = tw.index(tkinter.INSERT)
-                tw.insert(tkinter.END, m.as_string())
-                tw.insert(tkinter.END, "\n")
-                tw.tag_add(textname, start, tw.index(tkinter.INSERT))
-                tw.insert(tkinter.END, "\n\n\n")
-                tw.tag_add(entryname, start, tw.index(tkinter.INSERT))
-                start = lw.index(tkinter.INSERT)
-                fromstart = lw.index(tkinter.INSERT)
-                lw.insert(tkinter.END, m.get("From", ""))
-                lw.insert(tkinter.END, "\n")
-                lw.insert(tkinter.END, m.get("Date", ""))
-                lw.tag_add(fromname, fromstart, lw.index(tkinter.INSERT))
-                lw.insert(tkinter.END, "\n")
-                lw.insert(tkinter.END, m.get("Subject", ""))
-                lw.insert(tkinter.END, "\n")
-                lw.tag_add(textname, start, lw.index(tkinter.INSERT))
-                lw.insert(tkinter.END, "\n\n")
-                lw.tag_add(entryname, start, lw.index(tkinter.INSERT))
-                fm, dt = lw.get(*lw.tag_ranges(fromname)).split("\n")
-                dt = parsedate_tz(dt)
-                fm = parseaddr(fm)
-                date = strftime("%Y%m%d%H%M%S", dt[:-1])
-                utc = "".join((format(dt[-1] // 3600, "0=+3"), "00"))
-                filename = "".join((date, fm[-1], utc, ".mbs"))
+                start = emailtextctrl.index(tkinter.INSERT)
+                emailtextctrl.insert(tkinter.END, email_item.as_string())
+                emailtextctrl.insert(tkinter.END, "\n")
+                emailtextctrl.tag_add(textname, start, emailtextctrl.index(tkinter.INSERT))
+                emailtextctrl.insert(tkinter.END, "\n\n\n")
+                emailtextctrl.tag_add(entryname, start, emailtextctrl.index(tkinter.INSERT))
+                start = emaillistctrl.index(tkinter.INSERT)
+                fromstart = emaillistctrl.index(tkinter.INSERT)
+                emaillistctrl.insert(tkinter.END, email_item.get("From", ""))
+                emaillistctrl.insert(tkinter.END, "\n")
+                emaillistctrl.insert(tkinter.END, email_item.get("Date", ""))
+                emaillistctrl.tag_add(fromname, fromstart, emaillistctrl.index(tkinter.INSERT))
+                emaillistctrl.insert(tkinter.END, "\n")
+                emaillistctrl.insert(tkinter.END, email_item.get("Subject", ""))
+                emaillistctrl.insert(tkinter.END, "\n")
+                emaillistctrl.tag_add(textname, start, emaillistctrl.index(tkinter.INSERT))
+                emaillistctrl.insert(tkinter.END, "\n\n")
+                emaillistctrl.tag_add(entryname, start, emaillistctrl.index(tkinter.INSERT))
+                from_ = emaillistctrl.get(*emaillistctrl.tag_ranges(fromname)).split("\n")
+                from_time = parsedate_tz(from_[1])
+                from_addr = parseaddr(from_[0])
+                date = strftime("%Y%m%d%H%M%S", from_time[:-1])
+                utc = "".join((format(from_time[-1] // 3600, "0=+3"), "00"))
+                filename = "".join((date, from_addr[-1], utc, ".mbs"))
                 if filename in self._email_collector.excluded_emails:
-                    si = cc.search(filename, "1.0")
-                    start = cc.index(" ".join((si, "linestart")))
-                    end = cc.index(" ".join((si, "lineend")))
-                    cc.tag_add(fromname, start, end)
-                    cc.tag_bind(fromname, "<ButtonPress-1>", self._file_exists)
+                    filename_index = configctrl.search(filename, "1.0")
+                    start = configctrl.index(" ".join((filename_index, "linestart")))
+                    end = configctrl.index(" ".join((filename_index, "lineend")))
+                    configctrl.tag_add(fromname, start, end)
+                    configctrl.tag_bind(fromname, "<ButtonPress-1>", self._file_exists)
         except TypeError:
             if not self._email_collector.selected_emails_text:
                 tkinter.messagebox.showinfo(
@@ -569,16 +569,16 @@ class Select(ExceptionHandler):
             != tkinter.messagebox.YES
         ):
             return
-        ce = self._email_collector.copy_emails()
-        if ce is not None:
+        count = self._email_collector.copy_emails()
+        if count is not None:
             tkinter.messagebox.showinfo(
                 parent=self.get_toplevel(),
                 title="Apply Email Selection",
                 message="".join(
                     (
                         "Apply selection done: ",
-                        str(ce),
-                        " file copied." if ce == 1 else " files copied.",
+                        str(count),
+                        " file copied." if count == 1 else " files copied.",
                     )
                 ),
             )
@@ -604,9 +604,9 @@ class Select(ExceptionHandler):
 
     def _clear_email_tags(self):
         """Clear the tags identifying data for each email."""
-        for w in (self.emailtextctrl, self.emaillistctrl, self.configctrl):
-            for t in self._tag_names:
-                w.tag_delete(t)
+        for widget in (self.emailtextctrl, self.emaillistctrl, self.configctrl):
+            for tag in self._tag_names:
+                widget.tag_delete(tag)
         self._tag_names.clear()
 
     def conf_popup(self, event=None):
@@ -785,9 +785,9 @@ class Select(ExceptionHandler):
         tags = wlist.tag_names(
             wlist.index("".join(("@", str(event.x), ",", str(event.y))))
         )
-        for t in tags:
-            if t.startswith("F"):
-                text = wlist.get(*wlist.tag_ranges(t))
+        for tag in tags:
+            if tag.startswith("F"):
+                text = wlist.get(*wlist.tag_ranges(tag))
                 if (
                     tkinter.messagebox.askquestion(
                         parent=self.get_toplevel(),
@@ -803,8 +803,8 @@ class Select(ExceptionHandler):
                     != tkinter.messagebox.YES
                 ):
                     return
-                wtext.see(wtext.tag_ranges("".join(("T", t[1:])))[0])
-                trconf = wconf.tag_ranges(t)
+                wtext.see(wtext.tag_ranges("".join(("T", tag[1:])))[0])
+                trconf = wconf.tag_ranges(tag)
                 if trconf:
                     wconf.see(trconf[-1])
                 return
@@ -816,22 +816,22 @@ class Select(ExceptionHandler):
         tags = wtext.tag_names(
             wtext.index("".join(("@", str(event.x), ",", str(event.y))))
         )
-        for t in tags:
-            if t.startswith("T"):
-                ftag = "".join(("F", t[1:]))
-                fm, dt = wlist.get(*wlist.tag_ranges(ftag)).split("\n")
-                dt = parsedate_tz(dt)
-                fm = parseaddr(fm)
-                if not (fm and dt):
+        for tag in tags:
+            if tag.startswith("T"):
+                ftag = "".join(("F", tag[1:]))
+                from_ = wlist.get(*wlist.tag_ranges(ftag)).split("\n")
+                from_time = parsedate_tz(from_[1])
+                from_addr = parseaddr(from_[0])
+                if not (from_addr and from_time):
                     tkinter.messagebox.showinfo(
                         parent=self.get_toplevel(),
                         title="Remove Email from Selection",
                         message="Email from or date invalid.",
                     )
                     return
-                date = strftime("%Y%m%d%H%M%S", dt[:-1])
-                utc = "".join((format(dt[-1] // 3600, "0=+3"), "00"))
-                filename = "".join((date, fm[-1], utc, ".mbs"))
+                date = strftime("%Y%m%d%H%M%S", from_time[:-1])
+                utc = "".join((format(from_time[-1] // 3600, "0=+3"), "00"))
+                filename = "".join((date, from_addr[-1], utc, ".mbs"))
                 if filename in self._email_collector.excluded_emails:
                     tkinter.messagebox.showinfo(
                         parent=self.get_toplevel(),
@@ -846,11 +846,11 @@ class Select(ExceptionHandler):
                         ),
                     )
                     return
-                fp = os.path.join(
+                directorypath = os.path.join(
                     os.path.expanduser(self._email_collector.outputdirectory),
                     filename,
                 )
-                if os.path.exists(fp):
+                if os.path.exists(directorypath):
                     if (
                         tkinter.messagebox.askquestion(
                             parent=self.get_toplevel(),
@@ -903,15 +903,15 @@ class Select(ExceptionHandler):
         """ """
         if set_edited_flag:
             self._configuration_edited = True
-        fn = open(self._configuration, "w")
+        ocf = open(self._configuration, "w")
         try:
-            fn.write(
+            ocf.write(
                 self.configctrl.get("1.0", " ".join((tkinter.END, "-1 chars")))
             )
             if set_edited_flag:
                 self._configuration_edited = False
         finally:
-            fn.close()
+            ocf.close()
         self._clear_email_tags()
         self.emailtextctrl.delete("1.0", tkinter.END)
         self.emaillistctrl.delete("1.0", tkinter.END)
@@ -922,20 +922,20 @@ class Select(ExceptionHandler):
 
     def _file_exists(self, event=None):
         """ """
-        w = event.widget
-        ti = w.index("".join(("@", str(event.x), ",", str(event.y))))
-        start = w.index(" ".join((ti, "linestart")))
-        end = w.index(" ".join((ti, "lineend")))
-        filename = w.get(start, end).split(" ", 1)[-1]
-        od = os.path.expanduser(self._email_collector.outputdirectory)
-        fp = os.path.join(od, filename)
-        if os.path.exists(fp):
+        widget = event.widget
+        fileindex = widget.index("".join(("@", str(event.x), ",", str(event.y))))
+        start = widget.index(" ".join((fileindex, "linestart")))
+        end = widget.index(" ".join((fileindex, "lineend")))
+        filename = widget.get(start, end).split(" ", 1)[-1]
+        directorypath = os.path.expanduser(self._email_collector.outputdirectory)
+        filepath = os.path.join(directorypath, filename)
+        if os.path.exists(filepath):
             self.statusbar.set_status_text(
-                " ".join((filename, "exists in output directory", od))
+                " ".join((filename, "exists in output directory", directorypath))
             )
         else:
             self.statusbar.set_status_text(
-                " ".join((filename, "does not exist in output directory", od))
+                " ".join((filename, "does not exist in output directory", directorypath))
             )
 
 

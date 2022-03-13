@@ -118,10 +118,10 @@ class EmailCollector(object):
         new_values = {k: v() for k, v in _CONF_KEYWORDS.values() if v}
         args = {}
         for line in self.configuration.split("\n"):
-            g = self.email_select_line.match(line)
-            if not g:
+            match = self.email_select_line.match(line)
+            if not match:
                 return False
-            key, value = g.groups()
+            key, value = match.groups()
             if key is None:
                 continue
             if not value:
@@ -220,12 +220,12 @@ class _MessageFile(EmailMessage):
 
     def generate_filename(self):
         """Return a base filename or None when headers are no available."""
-        t = parsedate_tz(self.get("Date"))
-        f = parseaddr(self.get("From"))[-1]
-        if t and f:
-            ts = strftime("%Y%m%d%H%M%S", t[:-1])
-            utc = "".join((format(t[-1] // 3600, "0=+3"), "00"))
-            return "".join((ts, f, utc, ".mbs"))
+        from_date = parsedate_tz(self.get("Date"))
+        from_addr = parseaddr(self.get("From"))[-1]
+        if from_date and from_addr:
+            date_time_str = strftime("%Y%m%d%H%M%S", from_date[:-1])
+            utc = "".join((format(from_date[-1] // 3600, "0=+3"), "00"))
+            return "".join((date_time_str, from_addr, utc, ".mbs"))
         else:
             return False
 
@@ -240,12 +240,12 @@ class _MboxMessageFile(mboxMessage):
 
     def generate_filename(self):
         """Return a base filename or None when headers are no available."""
-        t = parsedate_tz(self.get("Date"))
-        f = parseaddr(self.get("From"))[-1]
-        if t and f:
-            ts = strftime("%Y%m%d%H%M%S", t[:-1])
-            utc = "".join((format(t[-1] // 3600, "0=+3"), "00"))
-            return "".join((ts, f, utc, ".mbs"))
+        from_date = parsedate_tz(self.get("Date"))
+        from_addr = parseaddr(self.get("From"))[-1]
+        if from_date and from_addr:
+            date_time_str = strftime("%Y%m%d%H%M%S", from_date[:-1])
+            utc = "".join((format(from_date[-1] // 3600, "0=+3"), "00"))
+            return "".join((date_time_str, from_addr, utc, ".mbs"))
         else:
             return False
 
@@ -328,35 +328,35 @@ class _OperaEmailClient(object):
         if mailboxstyle.lower() != _OPERA_EMAIL_CLIENT:
             raise EmailCollectorError("Mailbox style expected to be Opera")
         if mailstore is None:
-            ms = os.path.join("~", ".opera", "mail", "store")
+            mailstore_path = os.path.join("~", ".opera", "mail", "store")
         elif isinstance(mailstore, (str, bytes)):
-            ms = mailstore
+            mailstore_path = mailstore
         else:
-            ms = os.path.join(*mailstore)
+            mailstore_path = os.path.join(*mailstore)
         if accountdefs is None:
-            ma = os.path.join("~", ".opera", "mail", "accounts.ini")
+            accountdefs = os.path.join("~", ".opera", "mail", "accounts.ini")
         elif isinstance(accountdefs, (str, bytes)):
-            ma = accountdefs
+            accountdefs = accountdefs
         else:
-            ma = os.path.join(*accountdefs)
-        self.mailstore = os.path.expanduser(os.path.expandvars(ms))
-        self.accountdefs = os.path.expanduser(os.path.expandvars(ma))
+            accountdefs = os.path.join(*accountdefs)
+        self.mailstore = os.path.expanduser(os.path.expandvars(mailstore_path))
+        self.accountdefs = os.path.expanduser(os.path.expandvars(accountdefs))
         self.accounts = accounts
-        d = AppSysDate()
+        asd = AppSysDate()
         if earliestdate is not None:
-            if d.parse_date(earliestdate) == -1:
+            if asd.parse_date(earliestdate) == -1:
                 raise EmailCollectorError(
                     "Format error in earliest date argument."
                 )
-            self.earliestdate = d.iso_format_date()
+            self.earliestdate = asd.iso_format_date()
         else:
             self.earliestdate = earliestdate
         if mostrecentdate is not None:
-            if d.parse_date(mostrecentdate) == -1:
+            if asd.parse_date(mostrecentdate) == -1:
                 raise EmailCollectorError(
                     "Format error in most recent date argument."
                 )
-            self.mostrecentdate = d.iso_format_date()
+            self.mostrecentdate = asd.iso_format_date()
         else:
             self.mostrecentdate = mostrecentdate
         self.emailsfrom = emailsfrom
@@ -390,12 +390,12 @@ class _OperaEmailClient(object):
         """
         if self.earliestdate is not None:
             try:
-                ed = tuple([int(d) for d in self.earliestdate.split("-")])
-                date(*ed)
+                ymd = tuple([int(d) for d in self.earliestdate.split("-")])
+                date(*ymd)
             except:
                 raise EmailCollectorError("Earliest date format error")
         else:
-            ed = None
+            ymd = None
         if self.mostrecentdate is not None:
             try:
                 mrd = tuple([int(d) for d in self.mostrecentdate.split("-")])
@@ -415,46 +415,46 @@ class _OperaEmailClient(object):
 
         emails = []
         try:
-            ms = self.mailstore
-            ac = self.get_accounts()
-            for a in os.listdir(ms):
+            mailstore = self.mailstore
+            accounts = self.get_accounts()
+            for account in os.listdir(mailstore):
 
                 # Ignore directories not mentioned in accounts.ini
-                if a not in ac:
+                if account not in accounts:
                     continue
 
                 # Ignore directories for email accounts not in self.accounts
                 if self.accounts:
-                    if ac[a] not in self.accounts:
+                    if accounts[account] not in self.accounts:
                         continue
 
                 # Recalculate most recent date for each account if the
                 # mostrecentdate argument in _OperaEmailClient() was None
                 amrd = mrd
-                aed = ed
+                aed = ymd
 
-                years = sorted(os.listdir(os.path.join(ms, a)), reverse=True)
-                for y in years:
-                    for m in sorted(
-                        os.listdir(os.path.join(ms, a, y)), reverse=True
+                years = sorted(os.listdir(os.path.join(mailstore, account)), reverse=True)
+                for year in years:
+                    for month in sorted(
+                        os.listdir(os.path.join(mailstore, account, year)), reverse=True
                     ):
-                        for d in sorted(
-                            os.listdir(os.path.join(ms, a, y, m)), reverse=True
+                        for day in sorted(
+                            os.listdir(os.path.join(mailstore, account, year, month)), reverse=True
                         ):
                             if amrd is None:
-                                amrd = tuple([int(v) for v in (y, m, d)])
+                                amrd = tuple([int(v) for v in (year, month, day)])
                             if aed is None:
-                                aed = tuple([int(y) - 1, int(m), int(d)])
-                            emd = (int(y), int(m), int(d))
+                                aed = tuple([int(year) - 1, int(month), int(day)])
+                            emd = (int(year), int(month), int(day))
                             if emd < aed:
                                 break
                             if emd > amrd:
                                 continue
                             emails.extend(
                                 [
-                                    (len(e), e, (ms, a, y, m, d, e))
+                                    (len(e), e, (mailstore, account, year, month, day, e))
                                     for e in os.listdir(
-                                        os.path.join(ms, a, y, m, d)
+                                        os.path.join(mailstore, account, year, month, day)
                                     )
                                 ]
                             )
@@ -487,9 +487,9 @@ class _OperaEmailClient(object):
         """Return account names associated with owner's email addresses."""
         account_map = {}
         looking_for_email = False
-        f = open(self.accountdefs, "rb")
+        open_file = open(self.accountdefs, "rb")
         try:
-            for line in f:
+            for line in open_file:
                 match = self.account_ini_line.match(line)
                 if match:
                     account, header, email = match.groups()
@@ -516,7 +516,7 @@ class _OperaEmailClient(object):
                         looking_for_email = False
                         account_map[account_name] = email.decode("utf8")
         finally:
-            f.close()
+            open_file.close()
         return account_map
 
     def _get_emails_for_from_addressees(self):
@@ -528,14 +528,14 @@ class _OperaEmailClient(object):
         """
         if self.emailsfrom is None:
             return self.get_emails()
-        ac = self.get_accounts()
+        accounts = self.get_accounts()
         emails = []
         filenamemap = {}
-        for e in self.get_emails():
-            fn = self._is_from_addressee_of_email_in_selection(e, ac)
-            if fn:
-                emails.append(e)
-                filenamemap[e[-1]] = fn
+        for email in self.get_emails():
+            filename = self._is_from_addressee_of_email_in_selection(email, accounts)
+            if filename:
+                emails.append(email)
+                filenamemap[email[-1]] = filename
         self._filename_map = filenamemap
         return emails
 
@@ -543,28 +543,28 @@ class _OperaEmailClient(object):
         """ """
         if self.emailsfrom is None:
             return True
-        mf = open(os.path.join(*emailfile), "rb")
+        file_open = open(os.path.join(*emailfile), "rb")
         try:
-            m = message_from_binary_file(mf, _class=_MessageFile)
-            from_ = parseaddr(m.get("From"))[-1]
+            message = message_from_binary_file(file_open, _class=_MessageFile)
+            from_ = parseaddr(message.get("From"))[-1]
 
             # Ignore emails sent by account owner.
             if from_ == accounts[emailfile[1]]:
                 return False
 
             if not self.emailsfrom:
-                return m.generate_filename()
+                return message.generate_filename()
 
             # Ignore emails not sent by someone in self.emailsfrom.
             # Account owners may be in that set, so emails sent from one
             # account owner to another can get selected.
             if from_ in self.emailsfrom:
-                return m.generate_filename()
+                return message.generate_filename()
             else:
                 return False
 
         finally:
-            mf.close()
+            file_open.close()
 
     def copy_emails_to_directory(self):
         """ """
@@ -580,23 +580,23 @@ class _OperaEmailClient(object):
         filenamemap = self._filename_map
         exclude = set() if self.exclude is None else self.exclude
         while emailfiles:
-            e = emailfiles.pop()
-            filename = filenamemap[e[-1]]
+            emailpath = emailfiles.pop()
+            filename = filenamemap[emailpath[-1]]
             if filename in exclude:
                 if filename in exist:
-                    exist_and_exclude.add(e)
+                    exist_and_exclude.add(emailpath)
                 continue
             if filename not in exist:
-                copied.add(e)
+                copied.add(emailpath)
                 continue
             if not filecmp.cmp(
-                os.path.join(*e),
+                os.path.join(*emailpath),
                 os.path.join(directory, filename),
                 shallow=False,
             ):
-                changed.add(os.path.join(*e))
+                changed.add(os.path.join(*emailpath))
                 continue
-            equal.add(e)
+            equal.add(emailpath)
 
         if exist:
 
@@ -634,12 +634,12 @@ class _OperaEmailClient(object):
             # ranges overlap in sorted order, even if the sets have no files in
             # common.
             if copied:
-                ef = sorted(exist)
-                eflow = ef[0]
-                efhigh = ef[-1]
-                c = sorted([filenamemap[e[-1]] for e in copied])
-                clow = c[0]
-                chigh = c[-1]
+                filenames = sorted(exist)
+                eflow = filenames[0]
+                efhigh = filenames[-1]
+                sorted_filenames = sorted([filenamemap[e[-1]] for e in copied])
+                clow = sorted_filenames[0]
+                chigh = sorted_filenames[-1]
                 if clow < efhigh:
                     if chigh > eflow:
                         tkinter.messagebox.showinfo(
@@ -659,14 +659,14 @@ class _OperaEmailClient(object):
                         )
                         return
 
-        for e in copied:
-            d = open(os.path.join(*e), "rb")
+        for emailpath in copied:
+            input_open = open(os.path.join(*emailpath), "rb")
             try:
-                of = open(os.path.join(directory, filenamemap[e[-1]]), "wb")
+                file_open = open(os.path.join(directory, filenamemap[emailpath[-1]]), "wb")
                 try:
-                    of.write(d.read())
+                    file_open.write(input_open.read())
                 finally:
-                    of.close()
+                    file_open.close()
             except FileNotFoundError as exc:
                 excdir = os.path.basename(os.path.dirname(exc.filename))
                 tkinter.messagebox.showinfo(
@@ -682,7 +682,7 @@ class _OperaEmailClient(object):
                     ),
                 )
             finally:
-                d.close()
+                input_open.close()
         return len(copied)
 
     @property
@@ -698,14 +698,14 @@ class _OperaEmailClient(object):
         if self._selected_emails_text:
             return self._selected_emails_text
         emails_text = []
-        for f in self._selected_emails:
-            mf = open(os.path.join(*f), "rb")
+        for email_filepath in self._selected_emails:
+            file_open = open(os.path.join(*email_filepath), "rb")
             try:
                 emails_text.append(
-                    message_from_binary_file(mf, _class=_MessageFile)
+                    message_from_binary_file(file_open, _class=_MessageFile)
                 )
             finally:
-                mf.close()
+                file_open.close()
         self._selected_emails_text = emails_text
         return self._selected_emails_text
 
@@ -775,26 +775,26 @@ class _MboxEmail(object):
                 "The mbox file set is not specified in mailstore argument"
             )
         self.mailstore = set()
-        for ms in mailstore:
-            if isinstance(ms, (str, bytes)):
-                self.mailstore.add(os.path.expanduser(os.path.expandvars(ms)))
+        for email in mailstore:
+            if isinstance(email, (str, bytes)):
+                self.mailstore.add(os.path.expanduser(os.path.expandvars(email)))
             else:
                 self.mailstore.add(
-                    os.path.expanduser(os.path.expandvars(os.path.join(*ms)))
+                    os.path.expanduser(os.path.expandvars(os.path.join(*email)))
                 )
-        d = AppSysDate()
+        appsysdate = AppSysDate()
         if earliestdate is None:
             self.earliestdate = earliestdate
-        elif d.parse_date(earliestdate) == -1:
+        elif appsysdate.parse_date(earliestdate) == -1:
             self.earliestdate = earliestdate
         else:
-            self.earliestdate = d.iso_format_date()
+            self.earliestdate = appsysdate.iso_format_date()
         if mostrecentdate is None:
             self.mostrecentdate = mostrecentdate
-        elif d.parse_date(mostrecentdate) == -1:
+        elif appsysdate.parse_date(mostrecentdate) == -1:
             self.mostrecentdate = mostrecentdate
         else:
-            self.mostrecentdate = d.iso_format_date()
+            self.mostrecentdate = appsysdate.iso_format_date()
         self.emailsfrom = emailsfrom
         if collected == None:
             tkinter.messagebox.showinfo(
@@ -821,9 +821,9 @@ class _MboxEmail(object):
 
         if self.earliestdate is not None:
             try:
-                ed = [d for d in self.earliestdate.split("-")]
-                date(*tuple([int(d) for d in ed]))
-                ed = "".join(ed)
+                earliest_date = [d for d in self.earliestdate.split("-")]
+                date(*tuple([int(d) for d in earliest_date]))
+                earliest_date = "".join(earliest_date)
             except:
                 tkinter.messagebox.showinfo(
                     parent=self.parent,
@@ -838,7 +838,7 @@ class _MboxEmail(object):
                 )
                 return []
         else:
-            ed = None
+            earliest_date = None
         if self.mostrecentdate is not None:
             try:
                 mrd = [d for d in self.mostrecentdate.split("-")]
@@ -871,7 +871,7 @@ class _MboxEmail(object):
         try:
             for mailstore in self.mailstore:
                 try:
-                    ms = mbox(
+                    mailstore_mbox = mbox(
                         mailstore, factory=_MboxMessageFile, create=False
                     )
                 except NoSuchMailboxError as exc:
@@ -888,23 +888,23 @@ class _MboxEmail(object):
                         ),
                     )
                     return []
-                for m in ms.itervalues():
-                    fn = m.generate_filename()
-                    fnd = fn[:8]
-                    if ed is not None:
-                        if fnd < ed:
+                for message in mailstore_mbox.itervalues():
+                    filename = message.generate_filename()
+                    fnd = filename[:8]
+                    if earliest_date is not None:
+                        if fnd < earliest_date:
                             continue
                     if mrd is not None:
                         if fnd > mrd:
                             continue
-                    msgid = m.get("Message-ID")
-                    if fn not in timefrom:
-                        timefrom[fn] = set()
-                    timefrom[fn].add(msgid)
+                    msgid = message.get("Message-ID")
+                    if filename not in timefrom:
+                        timefrom[filename] = set()
+                    timefrom[filename].add(msgid)
 
                     # Assume it is impossible two different emails have same
                     # timestamp, from addressee, and message-id.
-                    emails[(fn, msgid)] = m
+                    emails[(filename, msgid)] = message
 
         except EmailCollectorError:
             raise
@@ -922,11 +922,11 @@ class _MboxEmail(object):
                 raise EmailCollectorError(
                     "Exception before any emails collected."
                 )
-        for k, v in timefrom.items():
-            if len(v) == 1:
-                emails[k] = emails.pop((k, v.pop()))
+        for k, value in timefrom.items():
+            if len(value) == 1:
+                emails[k] = emails.pop((k, value.pop()))
             else:
-                for i in v:
+                for i in value:
                     emails["".join((k, i))] = emails.pop((k, i))
         emails = [(k, v) for k, v in emails.items()]
         emails.sort()
@@ -942,10 +942,10 @@ class _MboxEmail(object):
         if self.emailsfrom is None:
             return self.get_emails()
         emails = []
-        for e in self.get_emails():
-            fn = self._is_from_addressee_of_email_in_selection(e[-1])
-            if fn:
-                emails.append(e)
+        for email in self.get_emails():
+            fntrue = self._is_from_addressee_of_email_in_selection(email[-1])
+            if fntrue:
+                emails.append(email)
         return emails
 
     def _is_from_addressee_of_email_in_selection(self, emailfile):
@@ -984,12 +984,12 @@ class _MboxEmail(object):
                 continue
 
             # message is in memory as mboxMessage so read (directory, filename)
-            fp = BytesIO()
-            g = BytesGenerator(fp, mangle_from_=False, maxheaderlen=0)
-            g.flatten(message)
-            text = fp.getvalue()
+            bytes_io = BytesIO()
+            generator = BytesGenerator(bytes_io, mangle_from_=False, maxheaderlen=0)
+            generator.flatten(message)
+            text = bytes_io.getvalue()
             if (
-                fp.getvalue()
+                bytes_io.getvalue()
                 != open(os.path.join(directory, filename), "rb").read()
             ):
                 changed.add(filename)
@@ -1032,12 +1032,12 @@ class _MboxEmail(object):
             # ranges overlap in sorted order, even if the sets have no files in
             # common.
             if copied:
-                ef = sorted(exist)
-                eflow = ef[0]
-                efhigh = ef[-1]
-                c = sorted([e[0] for e in copied])
-                clow = c[0]
-                chigh = c[-1]
+                filenames = sorted(exist)
+                eflow = filenames[0]
+                efhigh = filenames[-1]
+                sorted_filenames = sorted([e[0] for e in copied])
+                clow = sorted_filenames[0]
+                chigh = sorted_filenames[-1]
                 if clow < efhigh:
                     if chigh > eflow:
                         tkinter.messagebox.showinfo(
@@ -1058,12 +1058,12 @@ class _MboxEmail(object):
                         return
 
         for filename, message in copied:
-            fp = BytesIO()
-            g = BytesGenerator(fp, mangle_from_=False, maxheaderlen=0)
-            g.flatten(message)
-            text = fp.getvalue()
+            bytes_io = BytesIO()
+            generator = BytesGenerator(bytes_io, mangle_from_=False, maxheaderlen=0)
+            generator.flatten(message)
+            text = bytes_io.getvalue()
             try:
-                of = open(os.path.join(directory, filename), "wb")
+                file_open = open(os.path.join(directory, filename), "wb")
             except FileNotFoundError as exc:
                 excdir = os.path.basename(os.path.dirname(exc.filename))
                 tkinter.messagebox.showinfo(
@@ -1080,9 +1080,9 @@ class _MboxEmail(object):
                 )
                 return
             try:
-                of.write(text)
+                file_open.write(text)
             finally:
-                of.close()
+                file_open.close()
         return len(copied)
 
     @property
