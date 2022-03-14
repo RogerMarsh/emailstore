@@ -8,22 +8,22 @@ import tkinter
 
 from solentware_misc.gui.help import help_widget
 
-from .. import help
+from .. import help_
 
 
 def help_about(master):
     """Display About document."""
-    help_widget(master, help.ABOUT, help)
+    help_widget(master, help_.ABOUT, help_)
 
 
 def help_guide(master):
     """Display Guide document."""
-    help_widget(master, help.GUIDE, help)
+    help_widget(master, help_.GUIDE, help_)
 
 
 def help_notes(master):
     """Display Notes document."""
-    help_widget(master, help.NOTES, help)
+    help_widget(master, help_.NOTES, help_)
 
 
 if __name__ == "__main__":
