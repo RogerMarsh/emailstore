@@ -202,19 +202,27 @@ class Select(ExceptionHandler):
             mbox_popup_menu.add_separator()
             mbox_popup_menu.add_command(
                 label="Replace and #comment current",
-                command=self.replace_and_comment_current,
+                command=self.try_command(
+                    self.replace_and_comment_current, mbox_popup_menu
+                ),
             )
             mbox_popup_menu.add_command(
                 label="Replace",
-                command=self.replace_current,
+                command=self.try_command(
+                    self.replace_current, mbox_popup_menu
+                ),
             )
             mbox_popup_menu.add_command(
                 label="Insert after current",
-                command=self.insert_after_current,
+                command=self.try_command(
+                    self.insert_after_current, mbox_popup_menu
+                ),
             )
             mbox_popup_menu.add_command(
                 label="Insert before current",
-                command=self.insert_before_current,
+                command=self.try_command(
+                    self.insert_before_current, mbox_popup_menu
+                ),
             )
             mbox_popup_menu.add_separator()
             self.mbox_popup_menu = mbox_popup_menu
@@ -785,12 +793,19 @@ class Select(ExceptionHandler):
             initialdir=self.__mboxpath,
         )
         self.__mboxpath = None
+
+        # filepath was seen to be '' if the dialogue was cancelled with no
+        # file name selected, but () if a file name was selected when the
+        # dialogue was cancelled.  That was before the absence of the
+        # 'return None' statement was noticed.
         if not filepath:
             tkinter.messagebox.showinfo(
                 parent=self.get_toplevel(),
                 title=title,
                 message="Action not done: no filename selected",
             )
+            return None
+
         home = os.path.expanduser("~")
         if filepath.startswith("".join((home, "/"))):
             filepath = filepath.replace(home, "~")
