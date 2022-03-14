@@ -32,7 +32,7 @@ STARTUP_MINIMUM_HEIGHT = 400
 
 
 class SelectError(Exception):
-    pass
+    """Exception class for Select."""
 
 
 class Select(ExceptionHandler):
@@ -206,22 +206,18 @@ class Select(ExceptionHandler):
             mbox_popup_menu.add_command(
                 label="Replace and #comment current",
                 command=self.replace_and_comment_current,
-                accelerator="Alt F5",
             )
             mbox_popup_menu.add_command(
                 label="Replace",
                 command=self.replace_current,
-                accelerator="Alt F3",
             )
             mbox_popup_menu.add_command(
                 label="Insert after current",
                 command=self.insert_after_current,
-                accelerator="Alt F7",
             )
             mbox_popup_menu.add_command(
                 label="Insert before current",
                 command=self.insert_before_current,
-                accelerator="Alt F9",
             )
             mbox_popup_menu.add_separator()
             self.mbox_popup_menu = mbox_popup_menu
@@ -232,12 +228,14 @@ class Select(ExceptionHandler):
             mboxstyle_popup_menu.add_command(
                 label="Insert after mailboxstyle",
                 command=self.insert_after_current,
-                accelerator="Alt F7",
             )
             mboxstyle_popup_menu.add_separator()
             self.mboxstyle_popup_menu = mboxstyle_popup_menu
             self._folder = folder
             self._most_recent_action = None
+            self.__mboxpath = None
+            self.__start = None
+            self.__end = None
 
         except:
             self.root.destroy()
@@ -314,12 +312,9 @@ class Select(ExceptionHandler):
         )
         if not config_file:
             return
-        ocf = open(config_file, "r")
-        try:
+        with open(config_file, "r") as ocf:
             self.configctrl.delete("1.0", tkinter.END)
             self.configctrl.insert(tkinter.END, ocf.read())
-        finally:
-            ocf.close()
         self._configuration = config_file
         self._folder = os.path.dirname(config_file)
         self.root.wm_title(" - ".join((self.application_name, config_file)))
@@ -417,8 +412,7 @@ class Select(ExceptionHandler):
         self._configuration_edited = True
         self.configctrl.delete("1.0", tkinter.END)
         self.configctrl.insert(tkinter.END, config_text)
-        ocf = open(self._configuration, "w")
-        try:
+        with open(self._configuration, "w") as ocf:
             ocf.write(config_text)
             self._clear_email_tags()
             self.emailtextctrl.delete("1.0", tkinter.END)
@@ -426,8 +420,6 @@ class Select(ExceptionHandler):
             self.statusbar.set_status_text()
             self._configuration_edited = False
             self._email_collector = None
-        finally:
-            ocf.close()
         if self._most_recent_action:
             self._most_recent_action()
 
@@ -439,7 +431,7 @@ class Select(ExceptionHandler):
                 title="Show Email Selection",
                 message="Open an email selection rules file",
             )
-            return
+            return None
         if self._configuration_edited:
             tkinter.messagebox.showinfo(
                 parent=self.get_toplevel(),
@@ -451,7 +443,7 @@ class Select(ExceptionHandler):
                     )
                 ),
             )
-            return
+            return None
         if self._email_collector is None:
             emc = EmailCollector(
                 os.path.dirname(self._configuration),
@@ -467,14 +459,14 @@ class Select(ExceptionHandler):
                     title="Show Email Selection",
                     message="Email selection rules are invalid",
                 )
-                return
+                return None
             if not emc.selected_emails:
                 tkinter.messagebox.showinfo(
                     parent=self.get_toplevel(),
                     title="Show Email Selection",
                     message="No emails match the selection rules.",
                 )
-                return
+                return None
             self._email_collector = emc
         self._show_selection()
         self._most_recent_action = self.show_selection
@@ -610,7 +602,7 @@ class Select(ExceptionHandler):
         self._tag_names.clear()
 
     def conf_popup(self, event=None):
-        """ """
+        """Present dialogues to cancel exclusions and edit mbox file list."""
         wconf = self.configctrl
         index = wconf.index("".join(("@", str(event.x), ",", str(event.y))))
         start = wconf.index(" ".join((index, "linestart")))
@@ -709,9 +701,13 @@ class Select(ExceptionHandler):
         )
         return
 
-    def replace_and_comment_current(self, event=None):
-        """ """
-        mbox_filepath = self.get_new_mbox_filepath(
+    def replace_and_comment_current(self):
+        """Handle menu command to insert file after, and keep, selected item.
+
+        The kept selected item is prefixed with '#' so it will be ignored.
+
+        """
+        mbox_filepath = self._get_new_mbox_filepath(
             "Replace and Comment Current"
         )
         if not mbox_filepath:
@@ -724,9 +720,9 @@ class Select(ExceptionHandler):
         self._save_configuration()
         return
 
-    def replace_current(self, event=None):
-        """ """
-        mbox_filepath = self.get_new_mbox_filepath("Replace Current")
+    def replace_current(self):
+        """Handle menu command to replace selected item in place with file."""
+        mbox_filepath = self._get_new_mbox_filepath("Replace Current")
         if not mbox_filepath:
             return
         self.configctrl.delete(self.__start, self.__end + "-1 char")
@@ -734,9 +730,9 @@ class Select(ExceptionHandler):
         self._save_configuration()
         return
 
-    def insert_after_current(self, event=None):
-        """ """
-        mbox_filepath = self.get_new_mbox_filepath("Insert after Current")
+    def insert_after_current(self):
+        """Handle menu command to insert file after selected item."""
+        mbox_filepath = self._get_new_mbox_filepath("Insert after Current")
         if not mbox_filepath:
             return
         self.configctrl.insert(
@@ -746,9 +742,9 @@ class Select(ExceptionHandler):
         self._save_configuration()
         return
 
-    def insert_before_current(self, event=None):
-        """ """
-        mbox_filepath = self.get_new_mbox_filepath("Insert before Current")
+    def insert_before_current(self):
+        """Handle menu command to insert file before selected item."""
+        mbox_filepath = self._get_new_mbox_filepath("Insert before Current")
         if not mbox_filepath:
             return
         self.configctrl.insert(
@@ -758,14 +754,14 @@ class Select(ExceptionHandler):
         self._save_configuration()
         return
 
-    def get_new_mbox_filepath(self, title=""):
-        """ """
+    def _get_new_mbox_filepath(self, title=""):
+        """Present dialogue to select mbox mailstore file."""
         filepath = tkinter.filedialog.askopenfilename(
             parent=self.get_toplevel(),
             title=title,
             initialdir=self.__mboxpath,
         )
-        del self.__mboxpath
+        self.__mboxpath = None
         if not filepath:
             tkinter.messagebox.showinfo(
                 parent=self.get_toplevel(),
@@ -778,7 +774,7 @@ class Select(ExceptionHandler):
         return " ".join((_MBOX_MAIL_STORE, filepath))
 
     def list_popup(self, event=None):
-        """ """
+        """Present dialogue to scroll text widget to selected email."""
         wtext = self.emailtextctrl
         wlist = self.emaillistctrl
         wconf = self.configctrl
@@ -810,7 +806,7 @@ class Select(ExceptionHandler):
                 return
 
     def text_popup(self, event=None):
-        """ """
+        """Present dialogue to exclude emails from selection."""
         wtext = self.emailtextctrl
         wlist = self.emaillistctrl
         tags = wtext.tag_names(
@@ -903,20 +899,19 @@ class Select(ExceptionHandler):
         """ """
         if set_edited_flag:
             self._configuration_edited = True
-        ocf = open(self._configuration, "w")
-        try:
+        with open(self._configuration, "w") as ocf:
             ocf.write(
                 self.configctrl.get("1.0", " ".join((tkinter.END, "-1 chars")))
             )
             if set_edited_flag:
                 self._configuration_edited = False
-        finally:
-            ocf.close()
         self._clear_email_tags()
         self.emailtextctrl.delete("1.0", tkinter.END)
         self.emaillistctrl.delete("1.0", tkinter.END)
         self.statusbar.set_status_text()
         self._email_collector = None
+        self.__start = None
+        self.__end = None
         if self._most_recent_action:
             self._most_recent_action()
 
@@ -939,7 +934,7 @@ class Select(ExceptionHandler):
             )
 
 
-class Statusbar(object):
+class Statusbar:
 
     """Status bar for EmailStore application."""
 

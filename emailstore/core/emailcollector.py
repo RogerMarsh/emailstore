@@ -21,11 +21,11 @@ import re
 from email import message_from_binary_file
 from email.utils import parseaddr, parsedate_tz
 from email.message import EmailMessage
+from email.generator import BytesGenerator
 from mailbox import mbox, mboxMessage, NoSuchMailboxError
 import filecmp
 from time import strftime
 from io import BytesIO
-from email.generator import BytesGenerator
 import tkinter.messagebox
 
 from solentware_misc.core.utilities import AppSysDate
@@ -61,10 +61,10 @@ _CONF_KEYWORDS = {
 
 
 class EmailCollectorError(Exception):
-    pass
+    """Exception class for EmailCollector."""
 
 
-class EmailCollector(object):
+class EmailCollector:
 
     """Extract emails matching selection criteria from email client store.
 
@@ -76,19 +76,19 @@ class EmailCollector(object):
     email_select_line = re.compile(
         "".join(
             (
-                "\A",
-                "(?:",
-                "(?:",  # whitespace line
-                "\s*",
-                ")|",
-                "(?:",  # comment line
-                "\s*#.*",
-                ")|",
-                "(?:",  # parameter line
-                "\s*(\S+)\s+([^#]*).*",
-                ")",
-                ")",
-                "\Z",
+                r"\A",
+                r"(?:",
+                r"(?:",  # whitespace line
+                r"\s*",
+                r")|",
+                r"(?:",  # comment line
+                r"\s*#.*",
+                r")|",
+                r"(?:",  # parameter line
+                r"\s*(\S+)\s+([^#]*).*",
+                r")",
+                r")",
+                r"\Z",
             )
         )
     )
@@ -113,7 +113,11 @@ class EmailCollector(object):
         self.email_client = None
 
     def parse(self):
-        """ """
+        """Parse configuration file and return True if successful.
+
+        Selection criteria are held in self.criteria attribute.
+
+        """
         self.criteria = None
         new_values = {k: v() for k, v in _CONF_KEYWORDS.values() if v}
         args = {}
@@ -129,7 +133,7 @@ class EmailCollector(object):
             args_key, args_type = _CONF_KEYWORDS.get(key.lower(), (None, None))
             if args_key is None:
                 return False
-            elif args_type is None:
+            if args_type is None:
                 args[args_key] = value
             elif args_type is set:
                 args.setdefault(args_key, new_values[args_key]).add(value)
@@ -137,11 +141,11 @@ class EmailCollector(object):
         return True
 
     def _select_emails(self):
-        """ """
+        """Select and return list of emails or None."""
         if self.criteria is None:
-            return
+            return None
         if _MAILBOX_STYLE not in self.criteria:
-            return
+            return None
         if self.criteria[_MAILBOX_STYLE].lower() == _OPERA_EMAIL_CLIENT:
             self.email_client = _OperaEmailClient(
                 self.directory, self.parent, **self.criteria
@@ -151,60 +155,61 @@ class EmailCollector(object):
                 self.directory, self.parent, **self.criteria
             )
         else:
-            return
+            return None
         return self.email_client.selected_emails
 
     @property
     def selected_emails(self):
-        """ """
+        """Return list of selected emails."""
         if self.email_client:
             return self.email_client.selected_emails
         return self._select_emails()
 
     @property
     def selected_emails_text(self):
-        """ """
+        """Return text extracted from selected emails."""
         if self.email_client:
             return self.email_client.selected_emails_text
-        elif self._select_emails():
+        if self._select_emails():
             return self.email_client.selected_emails_text
+        return None
 
     @property
     def excluded_emails(self):
-        """ """
+        """Return set of excluded emails."""
         if not self.email_client:
             if not self._select_emails():
-                return
+                return None
         return self.email_client.excluded_emails
 
     @property
     def outputdirectory(self):
-        """ """
+        """Return email output directory path."""
         return self.email_client.outputdirectory
 
     @property
     def filename_map(self):
-        """ """
+        """Return mapping email identity to filename."""
         if not self.email_client:
             if not self._select_emails():
-                return
+                return None
         return self.email_client.filename_map
 
     def copy_emails(self):
-        """ """
+        """Copy selected email files to directory and return count or None."""
         if not self.email_client:
             if not self._select_emails():
-                return
+                return None
         return self.email_client.copy_emails_to_directory()
 
     def exclude_email(self, filename):
-        """ """
+        """Ensure filename is in the set to be excluded."""
         if self.email_client.exclude is None:
             self.email_client.exclude = set()
         self.email_client.exclude.add(filename)
 
     def include_email(self, filename):
-        """ """
+        """Ensure filename is not in the set to be excluded."""
         if self.email_client.exclude is None:
             self.email_client.exclude = set()
         self.email_client.exclude.remove(filename)
@@ -226,8 +231,7 @@ class _MessageFile(EmailMessage):
             date_time_str = strftime("%Y%m%d%H%M%S", from_date[:-1])
             utc = "".join((format(from_date[-1] // 3600, "0=+3"), "00"))
             return "".join((date_time_str, from_addr, utc, ".mbs"))
-        else:
-            return False
+        return False
 
 
 class _MboxMessageFile(mboxMessage):
@@ -246,11 +250,10 @@ class _MboxMessageFile(mboxMessage):
             date_time_str = strftime("%Y%m%d%H%M%S", from_date[:-1])
             utc = "".join((format(from_date[-1] // 3600, "0=+3"), "00"))
             return "".join((date_time_str, from_addr, utc, ".mbs"))
-        else:
-            return False
+        return False
 
 
-class _OperaEmailClient(object):
+class _OperaEmailClient:
 
     """Extract emails matching selection criteria from Opera email client.
 
@@ -335,9 +338,7 @@ class _OperaEmailClient(object):
             mailstore_path = os.path.join(*mailstore)
         if accountdefs is None:
             accountdefs = os.path.join("~", ".opera", "mail", "accounts.ini")
-        elif isinstance(accountdefs, (str, bytes)):
-            accountdefs = accountdefs
-        else:
+        elif not isinstance(accountdefs, (str, bytes)):
             accountdefs = os.path.join(*accountdefs)
         self.mailstore = os.path.expanduser(os.path.expandvars(mailstore_path))
         self.accountdefs = os.path.expanduser(os.path.expandvars(accountdefs))
@@ -360,7 +361,7 @@ class _OperaEmailClient(object):
         else:
             self.mostrecentdate = mostrecentdate
         self.emailsfrom = emailsfrom
-        if collected == None:
+        if collected is None:
             tkinter.messagebox.showinfo(
                 parent=self.parent,
                 title="Collect Emails",
@@ -467,7 +468,7 @@ class _OperaEmailClient(object):
         except EmailCollectorError:
             raise
         except:
-            if len(emails):
+            if len(emails) > 0:
                 raise EmailCollectorError(
                     "".join(
                         (
@@ -476,10 +477,9 @@ class _OperaEmailClient(object):
                         )
                     )
                 )
-            else:
-                raise EmailCollectorError(
-                    "Exception before any emails collected."
-                )
+            raise EmailCollectorError(
+                "Exception before any emails collected."
+            )
         emails.sort()
         return [e[-1] for e in emails]
 
@@ -487,8 +487,7 @@ class _OperaEmailClient(object):
         """Return account names associated with owner's email addresses."""
         account_map = {}
         looking_for_email = False
-        open_file = open(self.accountdefs, "rb")
-        try:
+        with open(self.accountdefs, "rb") as open_file:
             for line in open_file:
                 match = self.account_ini_line.match(line)
                 if match:
@@ -515,8 +514,6 @@ class _OperaEmailClient(object):
                             )
                         looking_for_email = False
                         account_map[account_name] = email.decode("utf8")
-        finally:
-            open_file.close()
         return account_map
 
     def _get_emails_for_from_addressees(self):
@@ -540,11 +537,10 @@ class _OperaEmailClient(object):
         return emails
 
     def _is_from_addressee_of_email_in_selection(self, emailfile, accounts):
-        """ """
+        """Return True if no selection or from addressee in selection."""
         if self.emailsfrom is None:
             return True
-        file_open = open(os.path.join(*emailfile), "rb")
-        try:
+        with open(os.path.join(*emailfile), "rb") as file_open:
             message = message_from_binary_file(file_open, _class=_MessageFile)
             from_ = parseaddr(message.get("From"))[-1]
 
@@ -560,14 +556,10 @@ class _OperaEmailClient(object):
             # account owner to another can get selected.
             if from_ in self.emailsfrom:
                 return message.generate_filename()
-            else:
-                return False
-
-        finally:
-            file_open.close()
+            return False
 
     def copy_emails_to_directory(self):
-        """ """
+        """Copy selected email files to directory and return count."""
         copied = set()
         changed = set()
         equal = set()
@@ -613,7 +605,7 @@ class _OperaEmailClient(object):
                         )
                     ),
                 )
-                return
+                return None
 
             # Existence of any file to be excluded is also sufficient reason.
             if exist_and_exclude:
@@ -628,7 +620,7 @@ class _OperaEmailClient(object):
                         )
                     ),
                 )
-                return
+                return None
 
             # Merging the existing and copy files cannot be done if the two
             # ranges overlap in sorted order, even if the sets have no files in
@@ -657,18 +649,14 @@ class _OperaEmailClient(object):
                                 )
                             ),
                         )
-                        return
+                        return None
 
         for emailpath in copied:
             input_open = open(os.path.join(*emailpath), "rb")
             try:
-                file_open = open(os.path.join(directory, filenamemap[emailpath[-1]]), "wb")
-                try:
+                with open(os.path.join(directory, filenamemap[emailpath[-1]]), "wb") as file_open:
                     file_open.write(input_open.read())
-                finally:
-                    file_open.close()
             except FileNotFoundError as exc:
-                excdir = os.path.basename(os.path.dirname(exc.filename))
                 tkinter.messagebox.showinfo(
                     parent=self.parent,
                     title="Update Extracted Text",
@@ -687,44 +675,41 @@ class _OperaEmailClient(object):
 
     @property
     def selected_emails(self):
-        """ """
+        """Return list of selected emails."""
         if self._selected_emails is None:
             self._selected_emails = self._get_emails_for_from_addressees()
         return self._selected_emails
 
     @property
     def selected_emails_text(self):
-        """ """
+        """Return text extracted from selected emails."""
         if self._selected_emails_text:
             return self._selected_emails_text
         emails_text = []
         for email_filepath in self._selected_emails:
-            file_open = open(os.path.join(*email_filepath), "rb")
-            try:
+            with open(os.path.join(*email_filepath), "rb") as file_open:
                 emails_text.append(
                     message_from_binary_file(file_open, _class=_MessageFile)
                 )
-            finally:
-                file_open.close()
         self._selected_emails_text = emails_text
         return self._selected_emails_text
 
     @property
     def excluded_emails(self):
-        """ """
+        """Return set of excluded emails."""
         if not self.exclude:
             return set()
         return set(self.exclude)
 
     @property
     def filename_map(self):
-        """ """
+        """Return mapping email identity to filename."""
         if not self._filename_map:
             return dict()
         return self._filename_map
 
 
-class _MboxEmail(object):
+class _MboxEmail:
 
     """Extract emails matching selection criteria from a mbox format file.
 
@@ -796,7 +781,7 @@ class _MboxEmail(object):
         else:
             self.mostrecentdate = appsysdate.iso_format_date()
         self.emailsfrom = emailsfrom
-        if collected == None:
+        if collected is None:
             tkinter.messagebox.showinfo(
                 parent=self.parent,
                 title="Collect Emails",
@@ -821,7 +806,7 @@ class _MboxEmail(object):
 
         if self.earliestdate is not None:
             try:
-                earliest_date = [d for d in self.earliestdate.split("-")]
+                earliest_date = self.earliestdate.split("-")
                 date(*tuple([int(d) for d in earliest_date]))
                 earliest_date = "".join(earliest_date)
             except:
@@ -841,7 +826,7 @@ class _MboxEmail(object):
             earliest_date = None
         if self.mostrecentdate is not None:
             try:
-                mrd = [d for d in self.mostrecentdate.split("-")]
+                mrd = self.mostrecentdate.split("-")
                 date(*tuple([int(d) for d in mrd]))
                 mrd = "".join(mrd)
             except:
@@ -918,10 +903,9 @@ class _MboxEmail(object):
                         )
                     )
                 )
-            else:
-                raise EmailCollectorError(
-                    "Exception before any emails collected."
-                )
+            raise EmailCollectorError(
+                "Exception before any emails collected."
+            )
         for k, value in timefrom.items():
             if len(value) == 1:
                 emails[k] = emails.pop((k, value.pop()))
@@ -949,7 +933,7 @@ class _MboxEmail(object):
         return emails
 
     def _is_from_addressee_of_email_in_selection(self, emailfile):
-        """ """
+        """Return True if no selection or from addressee in selection."""
         if self.emailsfrom is None:
             return True
 
@@ -962,7 +946,7 @@ class _MboxEmail(object):
         return bool(from_ in self.emailsfrom)
 
     def copy_emails_to_directory(self):
-        """ """
+        """Copy selected email files to directory and return count."""
         copied = set()
         changed = set()
         equal = set()
@@ -1011,7 +995,7 @@ class _MboxEmail(object):
                         )
                     ),
                 )
-                return
+                return None
 
             # Existence of any file to be excluded is also sufficient reason.
             if exist_and_exclude:
@@ -1026,7 +1010,7 @@ class _MboxEmail(object):
                         )
                     ),
                 )
-                return
+                return None
 
             # Merging the existing and copy files cannot be done if the two
             # ranges overlap in sorted order, even if the sets have no files in
@@ -1055,7 +1039,7 @@ class _MboxEmail(object):
                                 )
                             ),
                         )
-                        return
+                        return None
 
         for filename, message in copied:
             bytes_io = BytesIO()
@@ -1065,7 +1049,6 @@ class _MboxEmail(object):
             try:
                 file_open = open(os.path.join(directory, filename), "wb")
             except FileNotFoundError as exc:
-                excdir = os.path.basename(os.path.dirname(exc.filename))
                 tkinter.messagebox.showinfo(
                     parent=self.parent,
                     title="Copy Emails to Output Directory",
@@ -1078,7 +1061,7 @@ class _MboxEmail(object):
                         )
                     ),
                 )
-                return
+                return None
             try:
                 file_open.write(text)
             finally:
@@ -1087,14 +1070,14 @@ class _MboxEmail(object):
 
     @property
     def selected_emails(self):
-        """ """
+        """Return list of selected emails."""
         if self._selected_emails is None:
             self._selected_emails = self._get_emails_for_from_addressees()
         return self._selected_emails
 
     @property
     def selected_emails_text(self):
-        """ """
+        """Return text extracted from selected emails."""
         if self._selected_emails_text:
             return self._selected_emails_text
         emails_text = []
@@ -1105,14 +1088,14 @@ class _MboxEmail(object):
 
     @property
     def excluded_emails(self):
-        """ """
+        """Return set of excluded emails."""
         if not self.exclude:
             return set()
         return set(self.exclude)
 
     @property
     def filename_map(self):
-        """ """
+        """Return mapping email identity to filename."""
         if not self._filename_map:
             return dict()
         return self._filename_map
