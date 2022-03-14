@@ -486,7 +486,9 @@ class Select(ExceptionHandler):
         # selected_emails_text can be recovered from the pointer position
         # over the widget.
         try:
-            for email_num, email_item in enumerate(self._email_collector.selected_emails_text):
+            for email_num, email_item in enumerate(
+                self._email_collector.selected_emails_text
+            ):
                 textname = "x".join(("T", str(email_num)))
                 tags.add(textname)
                 entryname = "x".join(("M", str(email_num)))
@@ -496,22 +498,36 @@ class Select(ExceptionHandler):
                 start = emailtextctrl.index(tkinter.INSERT)
                 emailtextctrl.insert(tkinter.END, email_item.as_string())
                 emailtextctrl.insert(tkinter.END, "\n")
-                emailtextctrl.tag_add(textname, start, emailtextctrl.index(tkinter.INSERT))
+                emailtextctrl.tag_add(
+                    textname, start, emailtextctrl.index(tkinter.INSERT)
+                )
                 emailtextctrl.insert(tkinter.END, "\n\n\n")
-                emailtextctrl.tag_add(entryname, start, emailtextctrl.index(tkinter.INSERT))
+                emailtextctrl.tag_add(
+                    entryname, start, emailtextctrl.index(tkinter.INSERT)
+                )
                 start = emaillistctrl.index(tkinter.INSERT)
                 fromstart = emaillistctrl.index(tkinter.INSERT)
                 emaillistctrl.insert(tkinter.END, email_item.get("From", ""))
                 emaillistctrl.insert(tkinter.END, "\n")
                 emaillistctrl.insert(tkinter.END, email_item.get("Date", ""))
-                emaillistctrl.tag_add(fromname, fromstart, emaillistctrl.index(tkinter.INSERT))
+                emaillistctrl.tag_add(
+                    fromname, fromstart, emaillistctrl.index(tkinter.INSERT)
+                )
                 emaillistctrl.insert(tkinter.END, "\n")
-                emaillistctrl.insert(tkinter.END, email_item.get("Subject", ""))
+                emaillistctrl.insert(
+                    tkinter.END, email_item.get("Subject", "")
+                )
                 emaillistctrl.insert(tkinter.END, "\n")
-                emaillistctrl.tag_add(textname, start, emaillistctrl.index(tkinter.INSERT))
+                emaillistctrl.tag_add(
+                    textname, start, emaillistctrl.index(tkinter.INSERT)
+                )
                 emaillistctrl.insert(tkinter.END, "\n\n")
-                emaillistctrl.tag_add(entryname, start, emaillistctrl.index(tkinter.INSERT))
-                from_ = emaillistctrl.get(*emaillistctrl.tag_ranges(fromname)).split("\n")
+                emaillistctrl.tag_add(
+                    entryname, start, emaillistctrl.index(tkinter.INSERT)
+                )
+                from_ = emaillistctrl.get(
+                    *emaillistctrl.tag_ranges(fromname)
+                ).split("\n")
                 from_time = parsedate_tz(from_[1])
                 from_addr = parseaddr(from_[0])
                 date = strftime("%Y%m%d%H%M%S", from_time[:-1])
@@ -519,10 +535,16 @@ class Select(ExceptionHandler):
                 filename = "".join((date, from_addr[-1], utc, ".mbs"))
                 if filename in self._email_collector.excluded_emails:
                     filename_index = configctrl.search(filename, "1.0")
-                    start = configctrl.index(" ".join((filename_index, "linestart")))
-                    end = configctrl.index(" ".join((filename_index, "lineend")))
+                    start = configctrl.index(
+                        " ".join((filename_index, "linestart"))
+                    )
+                    end = configctrl.index(
+                        " ".join((filename_index, "lineend"))
+                    )
                     configctrl.tag_add(fromname, start, end)
-                    configctrl.tag_bind(fromname, "<ButtonPress-1>", self._file_exists)
+                    configctrl.tag_bind(
+                        fromname, "<ButtonPress-1>", self._file_exists
+                    )
         except TypeError:
             if not self._email_collector.selected_emails_text:
                 tkinter.messagebox.showinfo(
@@ -596,7 +618,11 @@ class Select(ExceptionHandler):
 
     def _clear_email_tags(self):
         """Clear the tags identifying data for each email."""
-        for widget in (self.emailtextctrl, self.emaillistctrl, self.configctrl):
+        for widget in (
+            self.emailtextctrl,
+            self.emaillistctrl,
+            self.configctrl,
+        ):
             for tag in self._tag_names:
                 widget.tag_delete(tag)
         self._tag_names.clear()
@@ -918,19 +944,31 @@ class Select(ExceptionHandler):
     def _file_exists(self, event=None):
         """ """
         widget = event.widget
-        fileindex = widget.index("".join(("@", str(event.x), ",", str(event.y))))
+        fileindex = widget.index(
+            "".join(("@", str(event.x), ",", str(event.y)))
+        )
         start = widget.index(" ".join((fileindex, "linestart")))
         end = widget.index(" ".join((fileindex, "lineend")))
         filename = widget.get(start, end).split(" ", 1)[-1]
-        directorypath = os.path.expanduser(self._email_collector.outputdirectory)
+        directorypath = os.path.expanduser(
+            self._email_collector.outputdirectory
+        )
         filepath = os.path.join(directorypath, filename)
         if os.path.exists(filepath):
             self.statusbar.set_status_text(
-                " ".join((filename, "exists in output directory", directorypath))
+                " ".join(
+                    (filename, "exists in output directory", directorypath)
+                )
             )
         else:
             self.statusbar.set_status_text(
-                " ".join((filename, "does not exist in output directory", directorypath))
+                " ".join(
+                    (
+                        filename,
+                        "does not exist in output directory",
+                        directorypath,
+                    )
+                )
             )
 
 

@@ -434,18 +434,28 @@ class _OperaEmailClient:
                 amrd = mrd
                 aed = ymd
 
-                years = sorted(os.listdir(os.path.join(mailstore, account)), reverse=True)
+                years = sorted(
+                    os.listdir(os.path.join(mailstore, account)), reverse=True
+                )
                 for year in years:
                     for month in sorted(
-                        os.listdir(os.path.join(mailstore, account, year)), reverse=True
+                        os.listdir(os.path.join(mailstore, account, year)),
+                        reverse=True,
                     ):
                         for day in sorted(
-                            os.listdir(os.path.join(mailstore, account, year, month)), reverse=True
+                            os.listdir(
+                                os.path.join(mailstore, account, year, month)
+                            ),
+                            reverse=True,
                         ):
                             if amrd is None:
-                                amrd = tuple([int(v) for v in (year, month, day)])
+                                amrd = tuple(
+                                    [int(v) for v in (year, month, day)]
+                                )
                             if aed is None:
-                                aed = tuple([int(year) - 1, int(month), int(day)])
+                                aed = tuple(
+                                    [int(year) - 1, int(month), int(day)]
+                                )
                             emd = (int(year), int(month), int(day))
                             if emd < aed:
                                 break
@@ -453,9 +463,26 @@ class _OperaEmailClient:
                                 continue
                             emails.extend(
                                 [
-                                    (len(e), e, (mailstore, account, year, month, day, e))
+                                    (
+                                        len(e),
+                                        e,
+                                        (
+                                            mailstore,
+                                            account,
+                                            year,
+                                            month,
+                                            day,
+                                            e,
+                                        ),
+                                    )
                                     for e in os.listdir(
-                                        os.path.join(mailstore, account, year, month, day)
+                                        os.path.join(
+                                            mailstore,
+                                            account,
+                                            year,
+                                            month,
+                                            day,
+                                        )
                                     )
                                 ]
                             )
@@ -477,9 +504,7 @@ class _OperaEmailClient:
                         )
                     )
                 )
-            raise EmailCollectorError(
-                "Exception before any emails collected."
-            )
+            raise EmailCollectorError("Exception before any emails collected.")
         emails.sort()
         return [e[-1] for e in emails]
 
@@ -529,7 +554,9 @@ class _OperaEmailClient:
         emails = []
         filenamemap = {}
         for email in self.get_emails():
-            filename = self._is_from_addressee_of_email_in_selection(email, accounts)
+            filename = self._is_from_addressee_of_email_in_selection(
+                email, accounts
+            )
             if filename:
                 emails.append(email)
                 filenamemap[email[-1]] = filename
@@ -654,7 +681,10 @@ class _OperaEmailClient:
         for emailpath in copied:
             with open(os.path.join(*emailpath), "rb") as input_open:
                 try:
-                    with open(os.path.join(directory, filenamemap[emailpath[-1]]), "wb") as file_open:
+                    with open(
+                        os.path.join(directory, filenamemap[emailpath[-1]]),
+                        "wb",
+                    ) as file_open:
                         file_open.write(input_open.read())
                 except FileNotFoundError as exc:
                     tkinter.messagebox.showinfo(
@@ -663,7 +693,9 @@ class _OperaEmailClient:
                         message="".join(
                             (
                                 "Write additional file to directory\n\n",
-                                os.path.basename(os.path.dirname(exc.filename)),
+                                os.path.basename(
+                                    os.path.dirname(exc.filename)
+                                ),
                                 "\n\nfailed.\n\nHopefully because the directory ",
                                 "does not exist yet: it could have been deleted.",
                             )
@@ -760,10 +792,14 @@ class _MboxEmail:
         self.mailstore = set()
         for email in mailstore:
             if isinstance(email, (str, bytes)):
-                self.mailstore.add(os.path.expanduser(os.path.expandvars(email)))
+                self.mailstore.add(
+                    os.path.expanduser(os.path.expandvars(email))
+                )
             else:
                 self.mailstore.add(
-                    os.path.expanduser(os.path.expandvars(os.path.join(*email)))
+                    os.path.expanduser(
+                        os.path.expandvars(os.path.join(*email))
+                    )
                 )
         appsysdate = AppSysDate()
         if earliestdate is None:
@@ -901,9 +937,7 @@ class _MboxEmail:
                         )
                     )
                 )
-            raise EmailCollectorError(
-                "Exception before any emails collected."
-            )
+            raise EmailCollectorError("Exception before any emails collected.")
         for k, value in timefrom.items():
             if len(value) == 1:
                 emails[k] = emails.pop((k, value.pop()))
@@ -965,7 +999,9 @@ class _MboxEmail:
 
             # message is in memory as mboxMessage so read (directory, filename)
             bytes_io = BytesIO()
-            generator = BytesGenerator(bytes_io, mangle_from_=False, maxheaderlen=0)
+            generator = BytesGenerator(
+                bytes_io, mangle_from_=False, maxheaderlen=0
+            )
             generator.flatten(message)
             text = bytes_io.getvalue()
             if (
@@ -1039,11 +1075,15 @@ class _MboxEmail:
 
         for filename, message in copied:
             bytes_io = BytesIO()
-            generator = BytesGenerator(bytes_io, mangle_from_=False, maxheaderlen=0)
+            generator = BytesGenerator(
+                bytes_io, mangle_from_=False, maxheaderlen=0
+            )
             generator.flatten(message)
             text = bytes_io.getvalue()
             try:
-                with open(os.path.join(directory, filename), "wb") as file_open:
+                with open(
+                    os.path.join(directory, filename), "wb"
+                ) as file_open:
                     file_open.write(text)
             except FileNotFoundError as exc:
                 tkinter.messagebox.showinfo(
