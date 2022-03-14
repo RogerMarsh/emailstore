@@ -2,7 +2,7 @@
 # Copyright 2014 Roger Marsh
 # Licence: See LICENCE (BSD licence)
 
-"""Email selection collection application"""
+"""Email selection collection application."""
 
 if __name__ == "__main__":
 

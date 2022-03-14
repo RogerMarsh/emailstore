@@ -65,7 +65,6 @@ class EmailCollectorError(Exception):
 
 
 class EmailCollector:
-
     """Extract emails matching selection criteria from email client store.
 
     By default look for emails sent or received using the Opera email client
@@ -96,7 +95,7 @@ class EmailCollector:
     def __init__(
         self, directory, configuration=None, dryrun=True, parent=None
     ):
-        """Define the email extraction rules from configuration
+        """Define the email extraction rules from configuration.
 
         directory - the directory containing the configuration file
         configuration - the rules for extracting emails
@@ -216,7 +215,6 @@ class EmailCollector:
 
 
 class _MessageFile(EmailMessage):
-
     """Extend EmailMessage class with a method to generate a filename.
 
     The From and Date headers are used.
@@ -235,7 +233,6 @@ class _MessageFile(EmailMessage):
 
 
 class _MboxMessageFile(mboxMessage):
-
     """Extend mboxMessage class with a method to generate a filename.
 
     The From and Date headers are used.
@@ -254,7 +251,6 @@ class _MboxMessageFile(mboxMessage):
 
 
 class _OperaEmailClient:
-
     """Extract emails matching selection criteria from Opera email client.
 
     By default look for emails sent or received in the most recent twelve
@@ -311,7 +307,7 @@ class _OperaEmailClient:
         exclude=None,
         mailboxstyle=_OPERA_EMAIL_CLIENT,
     ):
-        """Define the email extraction rules from configuration
+        """Define the email extraction rules from configuration.
 
         mailstore - root directory of tree containing email files
         accountdefs - opera file which defines email accounts
@@ -740,7 +736,6 @@ class _OperaEmailClient:
 
 
 class _MboxEmail:
-
     """Extract emails matching selection criteria from a mbox format file.
 
     By default look for emails sent or received in the most recent twelve
@@ -766,7 +761,7 @@ class _MboxEmail:
         exclude=None,
         mailboxstyle=_MBOX_FORMAT,
     ):
-        """Define the email extraction rules from configuration
+        """Define the email extraction rules from configuration.
 
         mailstore - set of files containining the emails
         accountdefs - ingnored
@@ -837,7 +832,6 @@ class _MboxEmail:
 
     def get_emails(self):
         """Return messages in order stored in mail store."""
-
         if self.earliestdate is not None:
             try:
                 earliest_date = self.earliestdate.split("-")

@@ -2,9 +2,7 @@
 # Copyright 2014 Roger Marsh
 # Licence: See LICENCE (BSD licence)
 
-"""Email selection filter User Interface.
-
-"""
+"""Email selection filter User Interface."""
 
 import os
 import tkinter
@@ -36,7 +34,6 @@ class SelectError(Exception):
 
 
 class Select(ExceptionHandler):
-
     """Define and use an email select and store configuration file."""
 
     def __init__(
@@ -242,7 +239,7 @@ class Select(ExceptionHandler):
             del self.root
 
     def __del__(self):
-        """ """
+        """Do tidy-up on deletion of instance."""
         if self._configuration:
             self._configuration = None
 
@@ -922,7 +919,7 @@ class Select(ExceptionHandler):
                 return
 
     def _save_configuration(self, set_edited_flag=True):
-        """ """
+        """Save configuration file and update widgets with latest action."""
         if set_edited_flag:
             self._configuration_edited = True
         with open(self._configuration, "w") as ocf:
@@ -942,7 +939,7 @@ class Select(ExceptionHandler):
             self._most_recent_action()
 
     def _file_exists(self, event=None):
-        """ """
+        """Report existence of filename under pointer in status bar."""
         widget = event.widget
         fileindex = widget.index(
             "".join(("@", str(event.x), ",", str(event.y)))
@@ -973,7 +970,6 @@ class Select(ExceptionHandler):
 
 
 class Statusbar:
-
     """Status bar for EmailStore application."""
 
     def __init__(self, root):

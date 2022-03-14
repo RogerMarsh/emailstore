@@ -2,9 +2,7 @@
 # Copyright 2013 Roger Marsh
 # Licence: See LICENCE (BSD licence)
 
-"""Functions to create Help widgets for emailstore.
-
-"""
+"""Functions to create Help widgets for emailstore."""
 
 import tkinter
 
@@ -14,20 +12,17 @@ from .. import help
 
 
 def help_about(master):
-    """Display About document"""
-
+    """Display About document."""
     help_widget(master, help.ABOUT, help)
 
 
 def help_guide(master):
-    """Display Guide document"""
-
+    """Display Guide document."""
     help_widget(master, help.GUIDE, help)
 
 
 def help_notes(master):
-    """Display Notes document"""
-
+    """Display Notes document."""
     help_widget(master, help.NOTES, help)
 
 
