@@ -389,16 +389,20 @@ class _OperaEmailClient:
             try:
                 ymd = tuple([int(d) for d in self.earliestdate.split("-")])
                 date(*ymd)
-            except:
-                raise EmailCollectorError("Earliest date format error")
+            except Exception:
+                raise EmailCollectorError(
+                    "Earliest date format error"
+                ) from None
         else:
             ymd = None
         if self.mostrecentdate is not None:
             try:
                 mrd = tuple([int(d) for d in self.mostrecentdate.split("-")])
                 date(*mrd)
-            except:
-                raise EmailCollectorError("Most recent date format error")
+            except Exception:
+                raise EmailCollectorError(
+                    "Most recent date format error"
+                ) from None
         else:
             mrd = None
 
@@ -490,7 +494,7 @@ class _OperaEmailClient:
                     break
         except EmailCollectorError:
             raise
-        except:
+        except Exception:
             if len(emails) > 0:
                 raise EmailCollectorError(
                     "".join(
@@ -499,8 +503,10 @@ class _OperaEmailClient:
                             os.path.join(*emails[-1]),
                         )
                     )
-                )
-            raise EmailCollectorError("Exception before any emails collected.")
+                ) from None
+            raise EmailCollectorError(
+                "Exception before any emails collected."
+            ) from None
         emails.sort()
         return [e[-1] for e in emails]
 
@@ -837,7 +843,7 @@ class _MboxEmail:
                 earliest_date = self.earliestdate.split("-")
                 date(*([int(d) for d in earliest_date]))
                 earliest_date = "".join(earliest_date)
-            except:
+            except Exception:
                 tkinter.messagebox.showinfo(
                     parent=self.parent,
                     title="Select Emails",
@@ -857,7 +863,7 @@ class _MboxEmail:
                 mrd = self.mostrecentdate.split("-")
                 date(*([int(d) for d in mrd]))
                 mrd = "".join(mrd)
-            except:
+            except Exception:
                 tkinter.messagebox.showinfo(
                     parent=self.parent,
                     title="Select Emails",
@@ -921,7 +927,7 @@ class _MboxEmail:
 
         except EmailCollectorError:
             raise
-        except:
+        except Exception:
             if len(emails):
                 raise EmailCollectorError(
                     "".join(
@@ -930,8 +936,10 @@ class _MboxEmail:
                             os.path.join(*emails[-1]),
                         )
                     )
-                )
-            raise EmailCollectorError("Exception before any emails collected.")
+                ) from None
+            raise EmailCollectorError(
+                "Exception before any emails collected."
+            ) from None
         for k, value in timefrom.items():
             if len(value) == 1:
                 emails[k] = emails.pop((k, value.pop()))

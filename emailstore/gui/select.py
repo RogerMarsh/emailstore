@@ -234,7 +234,7 @@ class Select(ExceptionHandler):
             self.__start = None
             self.__end = None
 
-        except:
+        except Exception:
             self.root.destroy()
             del self.root
 

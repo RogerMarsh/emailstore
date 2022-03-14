@@ -27,23 +27,29 @@ if __name__ == "__main__":
                     )
                 ),
             )
-        except:
+        except BaseException:
             pass
-        raise SystemExit("Unable to import start application utilities")
+        raise SystemExit(
+            "Unable to import start application utilities"
+        ) from None
     try:
         from .gui.select import Select
     except Exception as error:
         start_application_exception(
             error, appname=APPLICATION_NAME, action="import"
         )
-        raise SystemExit(" import ".join(("Unable to", APPLICATION_NAME)))
+        raise SystemExit(
+            " import ".join(("Unable to", APPLICATION_NAME))
+        ) from None
     try:
         app = Select(title=APPLICATION_NAME, width=400, height=200)
     except Exception as error:
         start_application_exception(
             error, appname=APPLICATION_NAME, action="initialise"
         )
-        raise SystemExit(" initialise ".join(("Unable to", APPLICATION_NAME)))
+        raise SystemExit(
+            " initialise ".join(("Unable to", APPLICATION_NAME))
+        ) from None
     try:
         app.root.mainloop()
     except SystemExit:
