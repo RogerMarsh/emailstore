@@ -652,25 +652,23 @@ class _OperaEmailClient:
                         return None
 
         for emailpath in copied:
-            input_open = open(os.path.join(*emailpath), "rb")
-            try:
-                with open(os.path.join(directory, filenamemap[emailpath[-1]]), "wb") as file_open:
-                    file_open.write(input_open.read())
-            except FileNotFoundError as exc:
-                tkinter.messagebox.showinfo(
-                    parent=self.parent,
-                    title="Update Extracted Text",
-                    message="".join(
-                        (
-                            "Write additional file to directory\n\n",
-                            os.path.basename(os.path.dirname(exc.filename)),
-                            "\n\nfailed.\n\nHopefully because the directory ",
-                            "does not exist yet: it could have been deleted.",
-                        )
-                    ),
-                )
-            finally:
-                input_open.close()
+            with open(os.path.join(*emailpath), "rb") as input_open:
+                try:
+                    with open(os.path.join(directory, filenamemap[emailpath[-1]]), "wb") as file_open:
+                        file_open.write(input_open.read())
+                except FileNotFoundError as exc:
+                    tkinter.messagebox.showinfo(
+                        parent=self.parent,
+                        title="Update Extracted Text",
+                        message="".join(
+                            (
+                                "Write additional file to directory\n\n",
+                                os.path.basename(os.path.dirname(exc.filename)),
+                                "\n\nfailed.\n\nHopefully because the directory ",
+                                "does not exist yet: it could have been deleted.",
+                            )
+                        ),
+                    )
         return len(copied)
 
     @property
@@ -807,7 +805,7 @@ class _MboxEmail:
         if self.earliestdate is not None:
             try:
                 earliest_date = self.earliestdate.split("-")
-                date(*tuple([int(d) for d in earliest_date]))
+                date(*([int(d) for d in earliest_date]))
                 earliest_date = "".join(earliest_date)
             except:
                 tkinter.messagebox.showinfo(
@@ -827,7 +825,7 @@ class _MboxEmail:
         if self.mostrecentdate is not None:
             try:
                 mrd = self.mostrecentdate.split("-")
-                date(*tuple([int(d) for d in mrd]))
+                date(*([int(d) for d in mrd]))
                 mrd = "".join(mrd)
             except:
                 tkinter.messagebox.showinfo(
@@ -912,9 +910,7 @@ class _MboxEmail:
             else:
                 for i in value:
                     emails["".join((k, i))] = emails.pop((k, i))
-        emails = [(k, v) for k, v in emails.items()]
-        emails.sort()
-        return emails
+        return sorted(emails.items())
 
     def _get_emails_for_from_addressees(self):
         """Return selected email files in order stored in mail store.
@@ -1047,7 +1043,8 @@ class _MboxEmail:
             generator.flatten(message)
             text = bytes_io.getvalue()
             try:
-                file_open = open(os.path.join(directory, filename), "wb")
+                with open(os.path.join(directory, filename), "wb") as file_open:
+                    file_open.write(text)
             except FileNotFoundError as exc:
                 tkinter.messagebox.showinfo(
                     parent=self.parent,
@@ -1062,10 +1059,6 @@ class _MboxEmail:
                     ),
                 )
                 return None
-            try:
-                file_open.write(text)
-            finally:
-                file_open.close()
         return len(copied)
 
     @property
