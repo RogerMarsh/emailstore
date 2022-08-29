@@ -363,8 +363,8 @@ class _OperaEmailClient:
                 title="Collect Emails",
                 message="".join(
                     (
-                        "\n\nDirectory for collected emails not specified:\n\n",
-                        "using '",
+                        "\n\nDirectory for collected emails ",
+                        "not specified:\n\nusing '",
                         COLLECTED,
                         "' by default.\n\n",
                     )
@@ -698,8 +698,9 @@ class _OperaEmailClient:
                                 os.path.basename(
                                     os.path.dirname(exc.filename)
                                 ),
-                                "\n\nfailed.\n\nHopefully because the directory ",
-                                "does not exist yet: it could have been deleted.",
+                                "\n\nfailed.\n\nHopefully because the ",
+                                "directory does not exist yet: it could ",
+                                "have been deleted.",
                             )
                         ),
                     )
@@ -822,8 +823,8 @@ class _MboxEmail:
                 title="Collect Emails",
                 message="".join(
                     (
-                        "\n\nDirectory for collected emails not specified:\n\n",
-                        "using '",
+                        "\n\nDirectory for collected emails ",
+                        "not specified:\n\nusing '",
                         COLLECTED,
                         "' by default.\n\n",
                     )
