@@ -11,7 +11,7 @@ import tkinter.filedialog
 from email.utils import parseaddr, parsedate_tz
 from time import strftime
 
-from solentware_misc.gui.exceptionhandler import ExceptionHandler
+from solentware_misc.gui.bindings import Bindings
 from solentware_misc.gui import textreadonly
 from solentware_misc.gui.configuredialog import ConfigureDialog
 
@@ -33,7 +33,7 @@ class SelectError(Exception):
     """Exception class for Select."""
 
 
-class Select(ExceptionHandler):
+class Select(Bindings):
     """Define and use an email select and store configuration file."""
 
     def __init__(
@@ -48,6 +48,7 @@ class Select(ExceptionHandler):
         **kargs - passed to tkinter Toplevel widget if use_toplevel True
 
         """
+        super().__init__()
         if use_toplevel:
             self.root = tkinter.Toplevel(**kargs)
         else:
@@ -250,6 +251,7 @@ class Select(ExceptionHandler):
         """Do tidy-up on deletion of instance."""
         if self._configuration:
             self._configuration = None
+        super().__del__()
 
     def help_about(self):
         """Display information about EmailStore."""
