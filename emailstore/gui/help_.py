@@ -1,4 +1,4 @@
-# help.py
+# help_.py
 # Copyright 2013 Roger Marsh
 # Licence: See LICENCE (BSD licence)
 
@@ -6,7 +6,7 @@
 
 import tkinter
 
-from solentware_misc.gui.help import help_widget
+from solentware_misc.gui.help_ import help_widget
 
 from .. import help_
 
