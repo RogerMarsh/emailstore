@@ -320,7 +320,7 @@ class Select(Bindings):
         )
         if not config_file:
             return
-        with open(config_file, "r") as ocf:
+        with open(config_file, "r", encoding="utf8") as ocf:
             self.configctrl.delete("1.0", tkinter.END)
             self.configctrl.insert(tkinter.END, ocf.read())
         self._configuration = config_file
@@ -420,7 +420,7 @@ class Select(Bindings):
         self._configuration_edited = True
         self.configctrl.delete("1.0", tkinter.END)
         self.configctrl.insert(tkinter.END, config_text)
-        with open(self._configuration, "w") as ocf:
+        with open(self._configuration, "w", encoding="utf8") as ocf:
             ocf.write(config_text)
             self._clear_email_tags()
             self.emailtextctrl.delete("1.0", tkinter.END)
@@ -940,7 +940,7 @@ class Select(Bindings):
         """Save configuration file and update widgets with latest action."""
         if set_edited_flag:
             self._configuration_edited = True
-        with open(self._configuration, "w") as ocf:
+        with open(self._configuration, "w", encoding="utf8") as ocf:
             ocf.write(
                 self.configctrl.get("1.0", " ".join((tkinter.END, "-1 chars")))
             )

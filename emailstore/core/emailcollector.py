@@ -276,19 +276,19 @@ class _OperaEmailClient:
     account_ini_line = re.compile(
         b"".join(
             (
-                b"\A",
-                b"(?:",
-                b"(?:",  # [account4]
-                b"\[(Account[0-9]+)\]",
-                b")|",
-                b"(?:",  # [<any other section>]
-                b"\[(.*)\]",
-                b")|",
-                b"(?:",  # Email=<email address>
-                b"Email=(.+)",
-                b")",
-                b")",
-                b"\n\Z",
+                rb"\A",
+                rb"(?:",
+                rb"(?:",  # [account4]
+                rb"\[(Account[0-9]+)\]",
+                rb")|",
+                rb"(?:",  # [<any other section>]
+                rb"\[(.*)\]",
+                rb")|",
+                rb"(?:",  # Email=<email address>
+                rb"Email=(.+)",
+                rb")",
+                rb")",
+                rb"\n\Z",
             )
         )
     )
@@ -387,7 +387,7 @@ class _OperaEmailClient:
         """
         if self.earliestdate is not None:
             try:
-                ymd = tuple([int(d) for d in self.earliestdate.split("-")])
+                ymd = tuple(int(d) for d in self.earliestdate.split("-"))
                 date(*ymd)
             except Exception:
                 raise EmailCollectorError(
@@ -397,7 +397,7 @@ class _OperaEmailClient:
             ymd = None
         if self.mostrecentdate is not None:
             try:
-                mrd = tuple([int(d) for d in self.mostrecentdate.split("-")])
+                mrd = tuple(int(d) for d in self.mostrecentdate.split("-"))
                 date(*mrd)
             except Exception:
                 raise EmailCollectorError(
@@ -450,7 +450,7 @@ class _OperaEmailClient:
                         ):
                             if amrd is None:
                                 amrd = tuple(
-                                    [int(v) for v in (year, month, day)]
+                                    int(v) for v in (year, month, day)
                                 )
                             if aed is None:
                                 aed = tuple(
@@ -738,7 +738,7 @@ class _OperaEmailClient:
     def filename_map(self):
         """Return mapping email identity to filename."""
         if not self._filename_map:
-            return dict()
+            return {}
         return self._filename_map
 
 
@@ -784,6 +784,7 @@ class _MboxEmail:
         and '2006-11-30'.
 
         """
+        del accountdefs, accounts
         self.parent = parent
         if mailboxstyle.lower() != _MBOX_FORMAT:
             raise EmailCollectorError("Mailbox style expected to be mbox")
@@ -1007,12 +1008,10 @@ class _MboxEmail:
             )
             generator.flatten(message)
             text = bytes_io.getvalue()
-            if (
-                bytes_io.getvalue()
-                != open(os.path.join(directory, filename), "rb").read()
-            ):
-                changed.add(filename)
-                continue
+            with open(os.path.join(directory, filename), "rb") as infile:
+                if bytes_io.getvalue() != infile.read():
+                    changed.add(filename)
+                    continue
             equal.add(message)
 
         if exist:
@@ -1117,7 +1116,7 @@ class _MboxEmail:
         if self._selected_emails_text:
             return self._selected_emails_text
         emails_text = []
-        for filename, message in self._selected_emails:
+        for _, message in self._selected_emails:
             emails_text.append(message)
         self._selected_emails_text = emails_text
         return self._selected_emails_text
@@ -1133,5 +1132,5 @@ class _MboxEmail:
     def filename_map(self):
         """Return mapping email identity to filename."""
         if not self._filename_map:
-            return dict()
+            return {}
         return self._filename_map
