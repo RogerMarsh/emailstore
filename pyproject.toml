@@ -10,17 +10,17 @@ line-length = 79
 
 [project]
 name = "emailstore"
-version = "1.5.7.dev0"
+version = "1.5.7"
 authors = [
   { name="Roger Marsh", email="roger.marsh@solentware.co.uk" },
 ]
 description = "Select and store emails from mailbox."
 classifiers = [
     "License :: OSI Approved :: BSD License",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
     "Topic :: Other/Nonlisted Topic",
     "Intended Audience :: End Users/Desktop",
@@ -30,7 +30,7 @@ classifiers = [
 license = {file = "LICENCE"}
 readme = "README"
 dependencies = [
-    "solentware-misc==1.7.1.dev0",
+    "solentware-misc==1.7.1",
 ]
 
 [project.urls]
