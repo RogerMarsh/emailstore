@@ -30,7 +30,6 @@ import tkinter.messagebox
 
 from solentware_misc.core.utilities import AppSysDate
 
-
 # The name of the configuration file for selecting emails from a mbox.
 COLLECTED_CONF = "collected.conf"
 
